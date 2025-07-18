@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Hàng đợi - Hệ thống bệnh viện</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <span style="font-size:2rem;color:#1976d2;">🏥</span>
+          <h1>Bệnh Viện Đa Khoa</h1>
+        </div>
+        <nav class="nav">
+          <a href="index.html" class="nav-link">Tổng quan</a>
+          <a href="queue.html" class="nav-link active">Hàng đợi</a>
+          <a href="appointments.html" class="nav-link">Lịch hẹn</a>
+          <a href="departments.html" class="nav-link">Khoa phòng</a>
+          <a href="users.html" class="nav-link" id="admin-menu">Người dùng</a>
+        </nav>
+        <div class="user-menu">
+          <div class="user-info">
+            <span id="current-user"></span>
+          </div>
+          <button class="btn-logout" onclick="logout()">Đăng xuất</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main class="main">
+    <div class="container">
+      <section class="section active">
+        <div class="section-header">
+          <h2>Quản lý hàng đợi</h2>
+          <p>Theo dõi và quản lý hàng đợi khám bệnh theo thời gian thực</p>
+        </div>
+        <div class="queue-container">
+          <div class="queue-filters">
+            <select id="department-filter" class="filter-select">
+              <option value="">Tất cả khoa</option>
+            </select>
+            <button class="btn btn-primary" onclick="refreshQueue()">Làm mới</button>
+          </div>
+          <div class="queue-grid" id="queue-grid"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="app.js"></script>
+  <script>
+    // Kiểm tra token đăng nhập
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token) window.location.href = 'login.html';
+    document.getElementById('current-user').innerText = role ? role : '';
+    if (role !== 'admin') document.getElementById('admin-menu').style.display = 'none';
+
+    // Hàm render hàng đợi động theo role
+    function renderQueue(data) {
+      const grid = document.getElementById('queue-grid');
+      grid.innerHTML = '';
+      if (!Array.isArray(data) || data.length === 0) {
+        grid.innerHTML = '<div style="color:#888;">Không có dữ liệu hàng đợi.</div>';
+        return;
+      }
+      data.forEach(q => {
+        let html = `<div class='queue-card'><h4>${q.department_name}</h4>`;
+        if (role === 'patient' && q.my_position) {
+          html += `<div class='current-serving'>Vị trí của bạn: <b>#${q.my_position}</b> (${q.my_status === 'waiting' ? 'Đang chờ' : 'Đang khám'})</div>`;
+        } else if (q.current_serving) {
+          html += `<div class='current-serving'>Đang phục vụ: <b>${q.current_serving.patient_name || ''} (#${q.current_serving.position || ''})</b></div>`;
+        }
+        html += `<ul class='queue-list'>`;
+        q.waiting_queue.forEach(w => {
+          html += `<li>${w.patient_name} (#${w.position})</li>`;
+        });
+        html += `</ul><div style='margin-top:0.5rem;color:#888;'>Ước tính chờ: ${q.estimated_wait_time} phút</div>`;
+        // Chức năng cho admin/receptionist: thêm, cập nhật, xóa (có thể bổ sung nút ở đây)
+        if (role === 'admin' || role === 'receptionist') {
+          html += `<div style='margin-top:0.5rem;'><button class='btn btn-secondary' onclick='alert("Chức năng cập nhật hàng đợi (demo)")'>Cập nhật</button></div>`;
+        }
+        // Chức năng cho doctor/nurse: xác nhận phục vụ, hoàn thành
+        if (role === 'doctor' || role === 'nurse') {
+          html += `<div style='margin-top:0.5rem;'><button class='btn btn-primary' onclick='alert("Xác nhận phục vụ (demo)")'>Xác nhận phục vụ</button></div>`;
+        }
+        html += `</div>`;
+        grid.innerHTML += html;
+      });
+    }
+
+    // Gọi API lấy trạng thái hàng đợi
+    function refreshQueue() {
+      fetch('http://localhost:8000/queue/status', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        renderQueue(data);
+      });
+    }
+    refreshQueue();
+    document.getElementById('department-filter').onchange = refreshQueue;
+    // WebSocket realtime
+    const ws = new WebSocket('ws://localhost:8000/ws/queue');
+    ws.onmessage = function(event) {
+      refreshQueue();
+    };
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html> 

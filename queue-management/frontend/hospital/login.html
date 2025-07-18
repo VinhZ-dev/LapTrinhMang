@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đăng nhập hệ thống bệnh viện</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-container">
+    <h2>Đăng nhập hệ thống bệnh viện</h2>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="username">Tên đăng nhập</label>
+        <input type="text" id="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Mật khẩu</label>
+        <input type="password" id="password" required>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Đăng nhập</button>
+      </div>
+    </form>
+    <div id="login-error" style="color:red"></div>
+    <div style="margin-top:1rem;">
+      Chưa có tài khoản? <a href="register.html">Đăng ký</a>
+    </div>
+  </div>
+  <script>
+    document.getElementById('login-form').onsubmit = async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      if (!username || !password) {
+        document.getElementById('login-error').innerText = 'Vui lòng nhập đầy đủ thông tin!';
+        return;
+      }
+      const res = await fetch('http://localhost:8000/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username, password})
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('role', data.user.Role);
+        window.location.href = 'index.html';
+      } else {
+        document.getElementById('login-error').innerText = 'Sai tài khoản hoặc mật khẩu!';
+      }
+    }
+  </script>
+</body>
+</html> 

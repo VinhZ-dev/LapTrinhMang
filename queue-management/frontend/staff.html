@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Hàng Đợi - Nhân Viên</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Nhân Viên Phục Vụ</h1>
+        <div class="queue-info">
+            <div class="current-number">
+                <span>Số đang phục vụ:</span>
+                <span id="current-serving" class="highlight">--</span>
+            </div>
+            <div class="waiting-list">
+                <h2>Danh sách chờ</h2>
+                <ul id="waiting-list"></ul>
+            </div>
+        </div>
+        <div class="actions">
+            <button id="next-btn">Gọi số tiếp theo</button>
+            <button id="done-btn">Hoàn thành</button>
+            <button id="skip-btn">Bỏ qua</button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+    <script>
+        window.pageRole = 'staff';
+    </script>
+</body>
+</html> 

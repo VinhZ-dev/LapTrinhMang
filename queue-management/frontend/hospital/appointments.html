@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Lịch hẹn - Hệ thống bệnh viện</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <span style="font-size:2rem;color:#1976d2;">🏥</span>
+          <h1>Bệnh Viện Đa Khoa</h1>
+        </div>
+        <nav class="nav">
+          <a href="index.html" class="nav-link">Tổng quan</a>
+          <a href="queue.html" class="nav-link">Hàng đợi</a>
+          <a href="appointments.html" class="nav-link active">Lịch hẹn</a>
+          <a href="departments.html" class="nav-link">Khoa phòng</a>
+          <a href="users.html" class="nav-link" id="admin-menu">Người dùng</a>
+        </nav>
+        <div class="user-menu">
+          <div class="user-info">
+            <span id="current-user"></span>
+          </div>
+          <button class="btn-logout" onclick="logout()">Đăng xuất</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main class="main">
+    <div class="container">
+      <section class="section active">
+        <div class="section-header">
+          <h2>Quản lý lịch hẹn</h2>
+          <p>Tạo và quản lý lịch hẹn khám bệnh</p>
+        </div>
+        <div class="appointments-actions">
+          <button class="btn btn-primary" onclick="showCreateAppointmentModal()">Tạo lịch hẹn mới</button>
+        </div>
+        <div class="appointments-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Mã số</th>
+                <th>Bệnh nhân</th>
+                <th>Khoa</th>
+                <th>Bác sĩ</th>
+                <th>Trạng thái</th>
+                <th>Thời gian</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="appointments-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+  <!-- Modal tạo lịch hẹn -->
+  <div id="create-appointment-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Tạo lịch hẹn mới</h3>
+        <button class="modal-close" onclick="closeModal('create-appointment-modal')">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="appointment-form">
+          <div class="form-group">
+            <label for="patient-select">Bệnh nhân:</label>
+            <select id="patient-select" required></select>
+          </div>
+          <div class="form-group">
+            <label for="department-select">Khoa:</label>
+            <select id="department-select" required></select>
+          </div>
+          <div class="form-group">
+            <label for="doctor-select">Bác sĩ:</label>
+            <select id="doctor-select"><option value="">Chọn bác sĩ (tùy chọn)</option></select>
+          </div>
+          <div class="form-group">
+            <label for="priority-select">Mức độ ưu tiên:</label>
+            <select id="priority-select" required>
+              <option value="normal">Bình thường</option>
+              <option value="high">Cao</option>
+              <option value="emergency">Khẩn cấp</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="symptoms">Triệu chứng:</label>
+            <textarea id="symptoms" rows="3" placeholder="Mô tả triệu chứng..."></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('create-appointment-modal')">Hủy</button>
+            <button type="submit" class="btn btn-primary">Tạo lịch hẹn</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+  <script>
+    // Kiểm tra token đăng nhập
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token) window.location.href = 'login.html';
+    document.getElementById('current-user').innerText = role ? role : '';
+    if (role !== 'admin') document.getElementById('admin-menu').style.display = 'none';
+    // Ẩn/hiện nút tạo lịch hẹn theo role
+    if (role !== 'admin' && role !== 'receptionist') {
+      document.querySelector('.appointments-actions').style.display = 'none';
+    }
+    // Load danh sách lịch hẹn phù hợp role
+    function loadAppointments() {
+      fetch('http://localhost:8000/appointments', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.getElementById('appointments-table-body');
+        tbody.innerHTML = '';
+        if (role === 'admin' || role === 'receptionist') {
+          data.forEach(a => {
+            tbody.innerHTML += `<tr><td>${a.AppointmentId}</td><td>${a.PatientId}</td><td>${a.DepartmentId}</td><td>${a.DoctorId || ''}</td><td>${a.Status}</td><td>${a.ScheduledTime ? a.ScheduledTime.substring(0,16).replace('T',' ') : ''}</td><td></td></tr>`;
+          });
+        } else if (role === 'doctor' || role === 'nurse') {
+          // Chỉ xem lịch hẹn của khoa mình phụ trách (có thể lọc thêm nếu cần)
+          data.forEach(a => {
+            tbody.innerHTML += `<tr><td>${a.AppointmentId}</td><td>${a.PatientId}</td><td>${a.DepartmentId}</td><td>${a.DoctorId || ''}</td><td>${a.Status}</td><td>${a.ScheduledTime ? a.ScheduledTime.substring(0,16).replace('T',' ') : ''}</td><td></td></tr>`;
+          });
+        } else if (role === 'patient') {
+          // Chỉ xem lịch hẹn của mình
+          data.filter(a => a.PatientId == localStorage.getItem('userId')).forEach(a => {
+            tbody.innerHTML += `<tr><td>${a.AppointmentId}</td><td>${a.PatientId}</td><td>${a.DepartmentId}</td><td>${a.DoctorId || ''}</td><td>${a.Status}</td><td>${a.ScheduledTime ? a.ScheduledTime.substring(0,16).replace('T',' ') : ''}</td><td></td></tr>`;
+          });
+        }
+      });
+    }
+    loadAppointments();
+    // Modal tạo lịch hẹn
+    function showCreateAppointmentModal() {
+      document.getElementById('create-appointment-modal').classList.add('active');
+      // Load danh sách bệnh nhân
+      fetch('http://localhost:8000/users', { headers: { 'Authorization': 'Bearer ' + token } })
+      .then(res => res.json())
+      .then(users => {
+        const select = document.getElementById('patient-select');
+        select.innerHTML = '';
+        users.filter(u => u.Role === 'patient').forEach(u => {
+          select.innerHTML += `<option value="${u.UserId}">${u.FullName}</option>`;
+        });
+      });
+      // Load danh sách khoa
+      fetch('http://localhost:8000/departments', { headers: { 'Authorization': 'Bearer ' + token } })
+      .then(res => res.json())
+      .then(depts => {
+        const select = document.getElementById('department-select');
+        select.innerHTML = '';
+        depts.forEach(d => {
+          select.innerHTML += `<option value="${d.DepartmentId}">${d.Name}</option>`;
+        });
+      });
+      // Load danh sách bác sĩ
+      fetch('http://localhost:8000/users/doctors', { headers: { 'Authorization': 'Bearer ' + token } })
+      .then(res => res.json())
+      .then(doctors => {
+        const select = document.getElementById('doctor-select');
+        select.innerHTML = '<option value="">Chọn bác sĩ (tùy chọn)</option>';
+        doctors.forEach(d => {
+          select.innerHTML += `<option value="${d.UserId}">${d.FullName}</option>`;
+        });
+      });
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+    // Xử lý submit tạo lịch hẹn
+    document.getElementById('appointment-form').onsubmit = async function(e) {
+      e.preventDefault();
+      const PatientId = document.getElementById('patient-select').value;
+      const DepartmentId = document.getElementById('department-select').value;
+      const DoctorId = document.getElementById('doctor-select').value;
+      const Priority = document.getElementById('priority-select').value;
+      const Symptoms = document.getElementById('symptoms').value;
+      const res = await fetch('http://localhost:8000/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ PatientId, DepartmentId, DoctorId: DoctorId || null, Priority, Symptoms })
+      });
+      if (res.ok) {
+        closeModal('create-appointment-modal');
+        loadAppointments();
+      } else {
+        alert('Lỗi khi tạo lịch hẹn!');
+      }
+    };
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html> 

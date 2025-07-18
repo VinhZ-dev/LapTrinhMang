@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đăng ký tài khoản bệnh viện</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="register-container">
+    <h2>Đăng ký tài khoản bệnh viện</h2>
+    <form id="register-form">
+      <div class="form-group">
+        <label for="username">Tên đăng nhập *</label>
+        <input type="text" id="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Mật khẩu *</label>
+        <input type="password" id="password" required>
+      </div>
+      <div class="form-group">
+        <label for="fullname">Họ tên *</label>
+        <input type="text" id="fullname" required>
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email">
+      </div>
+      <div class="form-group">
+        <label for="phone">Điện thoại</label>
+        <input type="text" id="phone">
+      </div>
+      <div class="form-group">
+        <label for="dob">Ngày sinh</label>
+        <input type="date" id="dob">
+      </div>
+      <div class="form-group">
+        <label for="gender">Giới tính</label>
+        <select id="gender">
+          <option value="">-- Chọn --</option>
+          <option value="Nam">Nam</option>
+          <option value="Nữ">Nữ</option>
+          <option value="Khác">Khác</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="address">Địa chỉ</label>
+        <textarea id="address" rows="2"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Đăng ký</button>
+      </div>
+    </form>
+    <div id="register-error" style="color:red"></div>
+    <div style="margin-top:1rem;">
+      Đã có tài khoản? <a href="login.html">Đăng nhập</a>
+    </div>
+  </div>
+  <script>
+    document.getElementById('register-form').onsubmit = async function(e) {
+      e.preventDefault();
+      const Username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const FullName = document.getElementById('fullname').value.trim();
+      const Email = document.getElementById('email').value.trim();
+      const Phone = document.getElementById('phone').value.trim();
+      const DateOfBirth = document.getElementById('dob').value ? new Date(document.getElementById('dob').value).toISOString() : null;
+      const Gender = document.getElementById('gender').value;
+      const Address = document.getElementById('address').value.trim();
+      const Role = 'patient';
+      // Validate cơ bản
+      if (!Username || !password || !FullName) {
+        document.getElementById('register-error').innerText = 'Vui lòng nhập đầy đủ các trường bắt buộc!';
+        return;
+      }
+      const body = { Username, password, FullName, Email, Phone, DateOfBirth, Gender, Address, Role };
+      const res = await fetch('http://localhost:8000/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
+        alert('Đăng ký thành công! Vui lòng đăng nhập.');
+        window.location.href = 'login.html';
+      } else {
+        const data = await res.json().catch(() => ({}));
+        document.getElementById('register-error').innerText = data.detail || 'Đăng ký thất bại!';
+      }
+    }
+  </script>
+</body>
+</html> 

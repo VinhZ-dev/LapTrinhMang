@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Hệ thống bệnh viện</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <span style="font-size:2rem;color:#1976d2;">🏥</span>
+          <h1>Bệnh Viện Đa Khoa</h1>
+        </div>
+        <nav class="nav">
+          <a href="index.html" class="nav-link active">Tổng quan</a>
+          <a href="queue.html" class="nav-link">Hàng đợi</a>
+          <a href="appointments.html" class="nav-link">Lịch hẹn</a>
+          <a href="users.html" class="nav-link" id="admin-menu">Người dùng</a>
+        </nav>
+        <div class="user-menu">
+          <div class="user-info">
+            <span id="current-user"></span>
+          </div>
+          <button class="btn-logout" onclick="logout()">Đăng xuất</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main class="main">
+    <div class="container">
+      <section class="section active">
+        <div class="section-header">
+          <h2>Tổng quan hệ thống</h2>
+          <p>Thống kê tổng quan về hoạt động của bệnh viện</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon waiting">⏳</div>
+            <div class="stat-content">
+              <h3 id="waiting-count">0</h3>
+              <p>Đang chờ</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon in-progress">🧺</div>
+            <div class="stat-content">
+              <h3 id="in-progress-count">0</h3>
+              <p>Đang khám</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon completed">✅</div>
+            <div class="stat-content">
+              <h3 id="completed-count">0</h3>
+              <p>Đã hoàn thành</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon avg-time">⏱️</div>
+            <div class="stat-content">
+              <h3 id="avg-wait-time">0</h3>
+              <p>Thời gian chờ TB (phút)</p>
+            </div>
+          </div>
+        </div>
+        <div class="department-stats">
+          <h3>Thống kê theo khoa</h3>
+          <div class="department-grid" id="department-stats"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="app.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token) window.location.href = 'login.html';
+    document.getElementById('current-user').innerText = role ? role : '';
+    // Ẩn hoàn toàn menu Khoa phòng nếu là patient
+    if (role === 'patient') {
+      const nav = document.querySelector('.nav');
+      if (nav) {
+        const deptLink = nav.querySelector('a[href="departments.html"]');
+        if (deptLink) deptLink.remove();
+      }
+    }
+
+    // Hàm render danh sách hàng đợi động
+    function renderQueues(data) {
+      const grid = document.getElementById('department-stats');
+      grid.innerHTML = '';
+      if (!Array.isArray(data) || data.length === 0) {
+        grid.innerHTML = '<div style="color:#888;">Không có dữ liệu hàng đợi.</div>';
+        return;
+      }
+      data.forEach(q => {
+        let html = `<div class='department-card'><h4>${q.department_name}</h4>`;
+        if (role === 'patient' && q.my_position) {
+          html += `<div>Vị trí của bạn: <b>#${q.my_position}</b> (${q.my_status === 'waiting' ? 'Đang chờ' : 'Đang khám'})</div>`;
+        } else if (q.current_serving) {
+          html += `<div>Đang phục vụ: <b>${q.current_serving.patient_name || ''} (#${q.current_serving.position || ''})</b></div>`;
+        }
+        html += `<ul class='queue-list'>`;
+        q.waiting_queue.forEach(w => {
+          html += `<li>${w.patient_name} (#${w.position})</li>`;
+        });
+        html += `</ul><div style='margin-top:0.5rem;color:#888;'>Ước tính chờ: ${q.estimated_wait_time} phút</div>`;
+        // Nút thao tác cho admin/receptionist/doctor/nurse
+        if (role !== 'patient') {
+          html += `<div style='margin-top:0.5rem;'>`;
+          if (q.current_serving) {
+            html += `<button class='btn btn-primary' onclick='completeQueue(${q.department_id})'>Hoàn thành lượt</button> `;
+          } else if (q.waiting_queue.length > 0) {
+            html += `<button class='btn btn-secondary' onclick='startQueue(${q.department_id})'>Xác nhận phục vụ</button>`;
+          }
+          html += `</div>`;
+        }
+        html += `</div>`;
+        grid.innerHTML += html;
+      });
+    }
+
+    // Gọi API lấy trạng thái hàng đợi
+    function loadQueues() {
+      fetch('http://localhost:8000/queue/status', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        renderQueues(data);
+      });
+    }
+    loadQueues();
+    // WebSocket realtime
+    const ws = new WebSocket('ws://localhost:8000/ws/queue');
+    ws.onmessage = function(event) {
+      loadQueues();
+    };
+    // Hàm xác nhận phục vụ (chuyển lượt đầu tiên sang in_progress)
+    function startQueue(departmentId) {
+      fetch(`http://localhost:8000/queue/start/${departmentId}`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      }).then(() => loadQueues());
+    }
+    // Hàm hoàn thành lượt (chuyển in_progress sang completed)
+    function completeQueue(departmentId) {
+      fetch(`http://localhost:8000/queue/complete/${departmentId}`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      }).then(() => loadQueues());
+    }
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html> 

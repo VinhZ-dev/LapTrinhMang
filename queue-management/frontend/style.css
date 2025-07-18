@@ -1,0 +1,83 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f4f6fb;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 500px;
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    padding: 32px 24px 24px 24px;
+}
+h1 {
+    text-align: center;
+    color: #2d3a4b;
+    margin-bottom: 24px;
+}
+.queue-info, .stats, .queue-management {
+    margin-bottom: 24px;
+}
+.current-number {
+    font-size: 1.2em;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.highlight {
+    color: #1976d2;
+    font-weight: bold;
+    font-size: 1.5em;
+}
+.waiting-list ul, #admin-waiting-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.waiting-list li, #admin-waiting-list li {
+    background: #e3eafc;
+    margin-bottom: 8px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.estimate {
+    margin-top: 16px;
+    font-size: 1em;
+    color: #555;
+}
+.actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+.actions button {
+    flex: 1;
+    padding: 12px 0;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.actions button:hover {
+    background: #125ea7;
+}
+@media (max-width: 600px) {
+    .container {
+        padding: 16px 4px;
+    }
+    h1 {
+        font-size: 1.3em;
+    }
+    .highlight {
+        font-size: 1.1em;
+    }
+} 

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Khoa phòng - Hệ thống bệnh viện</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <span style="font-size:2rem;color:#1976d2;">🏥</span>
+          <h1>Bệnh Viện Đa Khoa</h1>
+        </div>
+        <nav class="nav">
+          <a href="index.html" class="nav-link">Tổng quan</a>
+          <a href="queue.html" class="nav-link">Hàng đợi</a>
+          <a href="appointments.html" class="nav-link">Lịch hẹn</a>
+          <a href="departments.html" class="nav-link active">Khoa phòng</a>
+          <a href="users.html" class="nav-link" id="admin-menu">Người dùng</a>
+        </nav>
+        <div class="user-menu">
+          <div class="user-info">
+            <span id="current-user"></span>
+          </div>
+          <button class="btn-logout" onclick="logout()">Đăng xuất</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main class="main">
+    <div class="container">
+      <section class="section active">
+        <div class="section-header">
+          <h2>Quản lý khoa/phòng</h2>
+          <p>Thêm, sửa, xóa thông tin các khoa/phòng trong bệnh viện</p>
+        </div>
+        <div class="departments-actions">
+          <button class="btn btn-primary" onclick="showCreateDepartmentModal()">Thêm khoa mới</button>
+        </div>
+        <div class="departments-grid" id="departments-grid"></div>
+      </section>
+    </div>
+  </main>
+  <!-- Modal tạo khoa -->
+  <div id="create-department-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Thêm khoa mới</h3>
+        <button class="modal-close" onclick="closeModal('create-department-modal')">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="department-form">
+          <div class="form-group">
+            <label for="name">Tên khoa:</label>
+            <input id="name" required>
+          </div>
+          <div class="form-group">
+            <label for="type">Loại khoa:</label>
+            <input id="type" required>
+          </div>
+          <div class="form-group">
+            <label for="description">Mô tả:</label>
+            <textarea id="description"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="location">Vị trí:</label>
+            <input id="location">
+          </div>
+          <div class="form-group">
+            <label for="floor">Tầng:</label>
+            <input id="floor">
+          </div>
+          <div class="form-group">
+            <label for="room">Số phòng:</label>
+            <input id="room">
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('create-department-modal')">Hủy</button>
+            <button type="submit" class="btn btn-primary">Thêm khoa</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+  <script>
+    // Kiểm tra token đăng nhập
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token) window.location.href = 'login.html';
+    if (role === 'patient') window.location.href = 'index.html';
+    document.getElementById('current-user').innerText = role ? role : '';
+    if (role !== 'admin' && role !== 'receptionist') {
+      document.querySelector('.departments-actions').style.display = 'none';
+    }
+    if (role !== 'admin') document.getElementById('admin-menu').style.display = 'none';
+    // Load danh sách khoa
+    function loadDepartments() {
+      fetch('http://localhost:8000/departments', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const grid = document.getElementById('departments-grid');
+        grid.innerHTML = '';
+        data.forEach(d => {
+          grid.innerHTML += `<div class='department-info-card'>
+            <h4>${d.Name}</h4>
+            <p>Loại: ${d.Type}</p>
+            <p>Vị trí: ${d.Location || ''}</p>
+            <p>Tầng: ${d.Floor || ''}</p>
+            <p>Số phòng: ${d.RoomNumber || ''}</p>
+            <p>${d.Description || ''}</p>
+          </div>`;
+        });
+      });
+    }
+    loadDepartments();
+    // Modal tạo khoa
+    function showCreateDepartmentModal() {
+      document.getElementById('create-department-modal').classList.add('active');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+    // Xử lý submit tạo khoa
+    document.getElementById('department-form').onsubmit = async function(e) {
+      e.preventDefault();
+      const Name = document.getElementById('name').value;
+      const Type = document.getElementById('type').value;
+      const Description = document.getElementById('description').value;
+      const Location = document.getElementById('location').value;
+      const Floor = document.getElementById('floor').value;
+      const RoomNumber = document.getElementById('room').value;
+      const res = await fetch('http://localhost:8000/departments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ Name, Type, Description, Location, Floor, RoomNumber })
+      });
+      if (res.ok) {
+        closeModal('create-department-modal');
+        loadDepartments();
+      } else {
+        alert('Lỗi khi thêm khoa!');
+      }
+    };
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html> 

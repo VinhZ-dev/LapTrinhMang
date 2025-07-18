@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Thông tin cá nhân - Hệ thống bệnh viện</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <span style="font-size:2rem;color:#1976d2;">🏥</span>
+          <h1>Bệnh Viện Đa Khoa</h1>
+        </div>
+        <nav class="nav">
+          <a href="index.html" class="nav-link">Tổng quan</a>
+          <a href="queue.html" class="nav-link">Hàng đợi</a>
+          <a href="appointments.html" class="nav-link">Lịch hẹn</a>
+          <a href="users.html" class="nav-link active">Thông tin cá nhân</a>
+        </nav>
+        <div class="user-menu">
+          <div class="user-info">
+            <span id="current-user"></span>
+          </div>
+          <button class="btn-logout" onclick="logout()">Đăng xuất</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main class="main">
+    <div class="container">
+      <section class="section active">
+        <div class="section-header">
+          <h2>Thông tin cá nhân</h2>
+          <p>Xem và cập nhật thông tin tài khoản của bạn</p>
+        </div>
+        <div id="profile-info" class="profile-info-card"></div>
+        <div id="admin-user-manage"></div>
+      </section>
+    </div>
+  </main>
+  <script src="app.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token) window.location.href = 'login.html';
+    document.getElementById('current-user').innerText = role ? role : '';
+    // Lấy thông tin user hiện tại
+    fetch('http://localhost:8000/users', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(res => res.json())
+    .then(users => {
+      let user;
+      if (role === 'admin' || role === 'receptionist') {
+        // Nếu là admin, lấy user đầu tiên (hoặc có thể chọn user khác nếu muốn)
+        user = users[0];
+        // Hiển thị nút chuyển sang quản lý user
+        document.getElementById('admin-user-manage').innerHTML = '<a href="#" onclick="window.location.href=\'users.html\'" class="btn btn-secondary">Quản lý người dùng</a>';
+      } else {
+        // Nếu là user thường, chỉ lấy chính mình
+        user = users[0];
+      }
+      if (!user) return;
+      document.getElementById('profile-info').innerHTML = `
+        <div class="profile-row"><b>Họ tên:</b> ${user.FullName || ''}</div>
+        <div class="profile-row"><b>Tên đăng nhập:</b> ${user.Username || ''}</div>
+        <div class="profile-row"><b>Email:</b> ${user.Email || ''}</div>
+        <div class="profile-row"><b>Điện thoại:</b> ${user.Phone || ''}</div>
+        <div class="profile-row"><b>Ngày sinh:</b> ${user.DateOfBirth ? new Date(user.DateOfBirth).toLocaleDateString() : ''}</div>
+        <div class="profile-row"><b>Giới tính:</b> ${user.Gender || ''}</div>
+        <div class="profile-row"><b>Địa chỉ:</b> ${user.Address || ''}</div>
+        <div class="profile-row"><b>Vai trò:</b> ${user.Role || ''}</div>
+      `;
+    });
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+  <style>
+    .profile-info-card {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 2rem 1.5rem;
+      box-shadow: 0 2px 8px rgba(25, 118, 210, 0.07);
+      max-width: 500px;
+      margin: 0 auto 2rem auto;
+      font-size: 1.1rem;
+    }
+    .profile-row { margin-bottom: 0.7rem; }
+    #admin-user-manage { text-align: center; margin-top: 1.5rem; }
+  </style>
+</body>
+</html> 
