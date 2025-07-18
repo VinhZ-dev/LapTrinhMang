@@ -24,6 +24,14 @@ class UserOut(UserBase):
     class Config:
         from_attributes = True
 
+class UserUpdate(BaseModel):
+    FullName: Optional[str] = None
+    Email: Optional[str] = None
+    Phone: Optional[str] = None
+    DateOfBirth: Optional[datetime] = None
+    Gender: Optional[str] = None
+    Address: Optional[str] = None
+
 # Department
 class DepartmentBase(BaseModel):
     Name: str

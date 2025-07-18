@@ -1,7 +1,7 @@
 import hospital_models as models
 import hospital_schemas as schemas
 import database
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status, Path, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -10,7 +10,11 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import asyncio
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, cast, DATE, text
+from pydantic import BaseModel
+
+class RoleUpdate(BaseModel):
+    role: str
 
 # Configuration
 SECRET_KEY = "hospital-secret-key-2024"
@@ -147,9 +151,67 @@ def get_users(
     db: Session = Depends(get_db),
     token: dict = Depends(verify_token)
 ):
-    if token["role"] not in ["admin", "receptionist"]:
+    if token["role"] in ["admin", "receptionist"]:
+        return db.query(models.User).filter(models.User.IsActive == True).all()
+    elif token["role"] == "doctor":
+        # Chỉ trả về danh sách bệnh nhân cho bác sĩ
+        return db.query(models.User).filter(models.User.Role == "patient", models.User.IsActive == True).all()
+    elif token["role"] == "patient":
+        user = db.query(models.User).filter(models.User.Username == token["username"]).first()
+        return [user] if user else []
+    else:
         raise HTTPException(status_code=403, detail="Not authorized")
-    return db.query(models.User).filter(models.User.IsActive == True).all()
+
+@app.get("/users/me", response_model=schemas.UserOut)
+def get_current_user(db: Session = Depends(get_db), token: dict = Depends(verify_token)):
+    user = db.query(models.User).filter(models.User.Username == token["username"]).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@app.put("/users/me", response_model=schemas.UserOut)
+def update_current_user(
+    user_update: schemas.UserUpdate = Body(...),
+    db: Session = Depends(get_db),
+    token: dict = Depends(verify_token)
+):
+    user = db.query(models.User).filter(models.User.Username == token["username"]).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    # Cập nhật các trường cho phép
+    for field in ["FullName", "Email", "Phone", "DateOfBirth", "Gender", "Address"]:
+        if hasattr(user_update, field) and getattr(user_update, field) is not None:
+            setattr(user, field, getattr(user_update, field))
+    db.commit()
+    db.refresh(user)
+    return user
+
+@app.put("/users/{user_id}/role")
+def update_user_role(user_id: int, data: RoleUpdate, db: Session = Depends(get_db), token: dict = Depends(verify_token)):
+    if token["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    user = db.query(models.User).filter(models.User.UserId == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.Role = data.role
+    db.commit()
+    db.refresh(user)
+    return {"message": "Role updated"}
+
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), token: dict = Depends(verify_token)):
+    if token["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    user = db.query(models.User).filter(models.User.UserId == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    # Xóa tất cả lịch hẹn liên quan trước
+    db.query(models.Appointment).filter(models.Appointment.PatientId == user_id).delete()
+    db.query(models.Appointment).filter(models.Appointment.DoctorId == user_id).delete()
+    # Xóa user
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted"}
 
 @app.get("/users/doctors", response_model=List[schemas.UserOut])
 def get_doctors(db: Session = Depends(get_db)):
@@ -193,6 +255,30 @@ def create_appointment(
     send_queue_update(db)
     return db_appointment
 
+@app.post("/appointments/{appointment_id}/cancel")
+def cancel_appointment(appointment_id: int = Path(...), db: Session = Depends(get_db), token: dict = Depends(verify_token)):
+    appt = db.query(models.Appointment).filter(models.Appointment.AppointmentId == appointment_id).first()
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    if appt.Status in ["completed", "cancelled"]:
+        raise HTTPException(status_code=400, detail="Appointment already completed or cancelled")
+    appt.Status = "cancelled"
+    db.commit()
+    send_queue_update(db)
+    return {"message": "Appointment cancelled"}
+
+@app.delete("/appointments/{appointment_id}")
+def delete_appointment(appointment_id: int = Path(...), db: Session = Depends(get_db), token: dict = Depends(verify_token)):
+    appt = db.query(models.Appointment).filter(models.Appointment.AppointmentId == appointment_id).first()
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    if appt.Status not in ["completed", "cancelled"]:
+        raise HTTPException(status_code=400, detail="Chỉ được xóa lịch hẹn đã hoàn thành hoặc đã hủy")
+    db.delete(appt)
+    db.commit()
+    send_queue_update(db)
+    return {"message": "Appointment deleted"}
+
 # WebSocket endpoint
 @app.websocket("/ws/queue")
 async def websocket_endpoint(websocket: WebSocket):
@@ -213,25 +299,33 @@ def send_queue_update(db: Session):
 
 @app.get("/dashboard/stats")
 def dashboard_stats(db: Session = Depends(get_db), token: dict = Depends(verify_token)):
-    # Tổng số bệnh nhân đang chờ
-    waiting_patients = db.query(models.Appointment).filter(models.Appointment.Status == "waiting").count()
-    # Tổng số bệnh nhân đang khám
-    in_progress_patients = db.query(models.Appointment).filter(models.Appointment.Status == "in_progress").count()
-    # Tổng số lịch hẹn hoàn thành trong ngày
+    from datetime import datetime
     today = datetime.utcnow().date()
+    # Số bệnh nhân chờ xác nhận (waiting)
+    waiting_patients = db.query(models.Appointment).filter(models.Appointment.Status == "waiting").count()
+    # Số bệnh nhân đang khám (in_progress)
+    in_progress_patients = db.query(models.Appointment).filter(models.Appointment.Status == "in_progress").count()
+    # Số bệnh nhân đã hoàn thành trong ngày (completed)
     completed_today = db.query(models.Appointment).filter(
         models.Appointment.Status == "completed",
-        func.date(models.Appointment.EndTime) == today
+        models.Appointment.EndTime != None,
+        cast(models.Appointment.EndTime, DATE) == today
     ).count()
-    # Thời gian chờ trung bình (phút) của các lịch đã hoàn thành hôm nay
-    avg_wait_time = db.query(func.avg(func.strftime('%s', models.Appointment.StartTime) - func.strftime('%s', models.Appointment.ScheduledTime))).filter(
-        models.Appointment.Status == "completed",
-        models.Appointment.StartTime != None,
-        models.Appointment.ScheduledTime != None,
-        func.date(models.Appointment.EndTime) == today
+    # Thời gian chờ trung bình (chỉ tính cho completed)
+    avg_wait_time = db.execute(
+        text("""
+            SELECT AVG(DATEDIFF(MINUTE, ScheduledTime, StartTime))
+            FROM Appointments
+            WHERE Status = 'completed'
+              AND StartTime IS NOT NULL
+              AND ScheduledTime IS NOT NULL
+              AND EndTime IS NOT NULL
+              AND CAST(EndTime AS DATE) = :today
+        """),
+        {'today': today}
     ).scalar()
     if avg_wait_time:
-        avg_wait_time = round(avg_wait_time / 60)
+        avg_wait_time = round(avg_wait_time)
     else:
         avg_wait_time = 0
     # Thống kê theo khoa
@@ -240,10 +334,17 @@ def dashboard_stats(db: Session = Depends(get_db), token: dict = Depends(verify_
     for d in departments:
         waiting = db.query(models.Appointment).filter(models.Appointment.DepartmentId == d.DepartmentId, models.Appointment.Status == "waiting").count()
         in_progress = db.query(models.Appointment).filter(models.Appointment.DepartmentId == d.DepartmentId, models.Appointment.Status == "in_progress").count()
+        completed = db.query(models.Appointment).filter(
+            models.Appointment.DepartmentId == d.DepartmentId,
+            models.Appointment.Status == "completed",
+            models.Appointment.EndTime != None,
+            cast(models.Appointment.EndTime, DATE) == today
+        ).count()
         department_stats.append({
             "department_name": d.Name,
             "waiting": waiting,
-            "in_progress": in_progress
+            "in_progress": in_progress,
+            "completed": completed
         })
     return {
         "waiting_patients": waiting_patients,
@@ -258,7 +359,7 @@ def queue_status(db: Session = Depends(get_db), token: dict = Depends(verify_tok
     role = token["role"]
     username = token["username"]
     result = []
-    if role in ["admin", "receptionist"]:
+    if role in ["admin", "receptionist", "doctor", "patient"]:  # patient cũng xem toàn bộ
         departments = db.query(models.Department).all()
         for d in departments:
             waiting_queue = db.query(models.Appointment).filter(
@@ -275,17 +376,19 @@ def queue_status(db: Session = Depends(get_db), token: dict = Depends(verify_tok
                 "waiting_queue": [
                     {
                         "patient_name": db.query(models.User).filter(models.User.UserId == w.PatientId).first().FullName,
-                        "position": w.Position
+                        "position": w.Position,
+                        "scheduled_time": w.ScheduledTime.isoformat() if w.ScheduledTime else None
                     } for w in waiting_queue
                 ],
                 "current_serving": {
                     "patient_name": db.query(models.User).filter(models.User.UserId == current_serving.PatientId).first().FullName if current_serving else None,
-                    "position": current_serving.Position if current_serving else None
+                    "position": current_serving.Position if current_serving else None,
+                    "scheduled_time": current_serving.ScheduledTime.isoformat() if current_serving and current_serving.ScheduledTime else None
                 } if current_serving else None,
                 "estimated_wait_time": len(waiting_queue) * 5
             })
-    elif role in ["doctor", "nurse"]:
-        # Lấy khoa mà doctor/nurse phụ trách (giả sử có bảng DoctorDepartment)
+        return result
+    elif role == "nurse":
         user = db.query(models.User).filter(models.User.Username == username).first()
         doctor_departments = db.query(models.DoctorDepartment).filter(models.DoctorDepartment.DoctorId == user.UserId).all()
         for dd in doctor_departments:
@@ -315,7 +418,6 @@ def queue_status(db: Session = Depends(get_db), token: dict = Depends(verify_tok
             })
     elif role == "patient":
         user = db.query(models.User).filter(models.User.Username == username).first()
-        # Lấy tất cả các lịch hẹn của bệnh nhân này còn trong hàng đợi
         appointments = db.query(models.Appointment).filter(
             models.Appointment.PatientId == user.UserId,
             models.Appointment.Status.in_(["waiting", "in_progress"])
@@ -348,6 +450,65 @@ def queue_status(db: Session = Depends(get_db), token: dict = Depends(verify_tok
                 "estimated_wait_time": len(waiting_queue) * 5
             })
     return result
+
+@app.post("/queue/start/{department_id}")
+def start_queue(department_id: int = Path(...), db: Session = Depends(get_db), token: dict = Depends(verify_token)):
+    if token["role"] not in ["admin", "receptionist", "doctor", "nurse"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    appt = db.query(models.Appointment).filter(
+        models.Appointment.DepartmentId == department_id,
+        models.Appointment.Status == "waiting"
+    ).order_by(models.Appointment.Position).first()
+    if not appt:
+        raise HTTPException(status_code=404, detail="No waiting appointment")
+    appt.Status = "in_progress"
+    db.commit()
+    send_queue_update(db)
+    return {"message": "Started serving"}
+
+@app.post("/queue/complete/{department_id}")
+def complete_queue(department_id: int = Path(...), db: Session = Depends(get_db), token: dict = Depends(verify_token)):
+    if token["role"] not in ["admin", "receptionist", "doctor", "nurse"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    appt = db.query(models.Appointment).filter(
+        models.Appointment.DepartmentId == department_id,
+        models.Appointment.Status == "in_progress"
+    ).order_by(models.Appointment.Position).first()
+    if not appt:
+        raise HTTPException(status_code=404, detail="No in-progress appointment")
+    appt.Status = "completed"
+    from datetime import datetime
+    appt.EndTime = datetime.utcnow()
+    db.commit()
+    # Sau khi hoàn thành, cập nhật lại Position cho các lịch hẹn còn lại
+    remaining_appts = db.query(models.Appointment).filter(
+        models.Appointment.DepartmentId == department_id,
+        models.Appointment.Status.in_(["waiting", "in_progress"])
+    ).order_by(models.Appointment.Position).all()
+    for idx, a in enumerate(remaining_appts, start=1):
+        a.Position = idx
+    db.commit()
+    send_queue_update(db)
+    return {"message": "Completed appointment"}
+
+class DoctorDepartmentIn(BaseModel):
+    DoctorId: int
+    DepartmentId: int
+    IsPrimary: bool = False
+
+@app.post("/doctor_departments")
+def add_doctor_department(data: DoctorDepartmentIn, db: Session = Depends(get_db), token: dict = Depends(verify_token)):
+    if token["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    entry = models.DoctorDepartment(
+        DoctorId=data.DoctorId,
+        DepartmentId=data.DepartmentId,
+        IsPrimary=data.IsPrimary
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return {"message": "Doctor assigned to department", "id": entry.Id}
 
 @app.get("/")
 def read_root():

@@ -3,12 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Hàng Đợi - Khách Hàng</title>
+    <title>Quản Lý Hàng Đợi - Bệnh Viện Đa Khoa</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+      body { background: #f5f7fa; margin: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+      .header {
+        background: #1976d2;
+        color: #fff;
+        padding: 1.2rem 0;
+        box-shadow: 0 2px 8px #0001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .header .logo {
+        font-size: 2rem;
+        margin-right: 1rem;
+      }
+      .header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: 1px;
+      }
+      .container {
+        max-width: 480px;
+        margin: 2.5rem auto;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px #0001;
+        padding: 2rem 1.5rem 1.5rem 1.5rem;
+      }
+      .queue-info { display: flex; flex-direction: column; gap: 2rem; }
+      .current-number {
+        display: flex; align-items: center; justify-content: space-between;
+        font-size: 1.3rem; font-weight: 500; margin-bottom: 0.5rem;
+      }
+      .highlight {
+        color: #1976d2; font-size: 2.2rem; font-weight: 700; margin-left: 1rem;
+      }
+      .waiting-list h2 {
+        font-size: 1.1rem; color: #1976d2; margin-bottom: 0.7rem;
+      }
+      .waiting-list ul {
+        list-style: none; padding: 0; margin: 0;
+        border: 1px solid #e3eaf6; border-radius: 8px; background: #f8fafc;
+        max-height: 220px; overflow-y: auto;
+      }
+      .waiting-list li {
+        padding: 0.7rem 1rem; border-bottom: 1px solid #e3eaf6; font-size: 1.05rem;
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .waiting-list li:last-child { border-bottom: none; }
+      .estimate {
+        font-size: 1.1rem; color: #333; display: flex; align-items: center; gap: 0.5rem;
+        background: #e3f2fd; border-radius: 8px; padding: 0.7rem 1rem; margin-top: 1rem;
+      }
+      .loading-overlay {
+        position: fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); display:none; align-items:center; justify-content:center; z-index:2000;
+      }
+      .loading-spinner { font-size:1.2rem; color:#1976d2; }
+      .notification {
+        position: fixed; bottom: 2rem; right: 2rem; min-width: 180px; max-width: 320px; background: #1976d2; color: #fff; padding: 0.5rem 1rem; border-radius: 8px; font-size: 1rem; z-index: 2000; opacity: 0; pointer-events: none; box-shadow: 0 2px 12px #0002; transition: opacity 0.3s, transform 0.3s; transform: translateY(20px); text-align: left; line-height: 1.4; margin-bottom: 0.5rem; display: inline-block; box-sizing: border-box; white-space: pre-line; word-break: break-word;
+      }
+      .notification.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+      @media (max-width: 600px) {
+        .container { max-width: 98vw; padding: 1rem 0.3rem; }
+        .header h1 { font-size: 1.2rem; }
+        .header .logo { font-size: 1.3rem; }
+        .notification { right: 0.7rem; bottom: 0.7rem; max-width: 95vw; }
+      }
+    </style>
 </head>
 <body>
+    <div class="header">
+      <span class="logo">🏥</span>
+      <h1>Bệnh Viện Đa Khoa - Quản Lý Hàng Đợi</h1>
+      <nav class="nav" style="margin-top:1rem;display:flex;gap:1.2rem;justify-content:center;align-items:center;">
+        <a href="index.html" class="nav-link active">Tổng quan</a>
+        <a href="queue.html" class="nav-link">Hàng đợi</a>
+        <a href="appointments.html" class="nav-link">Lịch hẹn</a>
+        <a href="departments.html" class="nav-link">Khoa phòng</a>
+        <a href="users.html" class="nav-link" id="user-nav-link">Người dùng</a>
+      </nav>
+    </div>
     <div class="container">
-        <h1>Quản Lý Hàng Đợi</h1>
         <div class="queue-info">
             <div class="current-number">
                 <span>Số đang phục vụ:</span>
@@ -23,10 +102,82 @@
                 <span id="estimate-time">-- phút</span>
             </div>
         </div>
+        <div class="chart-section">
+          <h2 style="color:#1976d2;text-align:center;margin:2rem 0 1rem 0;font-size:1.25rem;">Biểu đồ số lượng người chờ theo khoa</h2>
+          <div style="background:#fff;border-radius:14px;box-shadow:0 2px 16px #1976d220;padding:1.5rem 1rem 1.5rem 1rem;max-width:100%;margin:0 auto;">
+            <canvas id="departmentChart" style="width:100%;max-width:700px;height:340px;display:block;margin:0 auto;"></canvas>
+          </div>
+        </div>
     </div>
+    <div class="loading-overlay" id="loading-overlay"><div class="loading-spinner"><span>Đang tải...</span></div></div>
+    <div id="notification" class="notification"></div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js"></script>
     <script>
-        window.pageRole = 'customer';
+      window.pageRole = 'customer';
+      // Loading & notification helpers
+      function showLoading(show) {
+        document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
+      }
+      function notify(msg, type = 'info') {
+        const n = document.getElementById('notification');
+        n.innerText = msg;
+        n.className = 'notification ' + (type || 'info');
+        n.classList.add('active');
+        setTimeout(() => n.classList.remove('active'), 2500);
+      }
+      // Optionally: auto-scroll to current serving
+      // ... (logic cập nhật số đang phục vụ, danh sách chờ, thời gian chờ dự kiến sẽ nằm trong app.js)
+
+      // --- Biểu đồ số lượng người chờ theo khoa ---
+      async function renderDepartmentChart() {
+        // Giả lập dữ liệu, bạn có thể thay bằng fetch API thực tế
+        // Ví dụ: [{name: 'Khoa Nội', waiting: 5}, ...]
+        let data = [
+          {name: 'Khoa Nội', waiting: 5},
+          {name: 'Khoa Ngoại', waiting: 3},
+          {name: 'Khoa Nhi', waiting: 7},
+          {name: 'Khoa Sản', waiting: 2},
+          {name: 'Cấp cứu', waiting: 4}
+        ];
+        // Nếu có API thực tế:
+        // const res = await fetch('http://localhost:8000/dashboard/stats', {headers: {'Authorization': 'Bearer ' + (localStorage.getItem('token')||'')}});
+        // const stats = await res.json();
+        // data = stats.department_stats.map(d => ({name: d.department_name, waiting: d.waiting}));
+        const ctx = document.getElementById('departmentChart').getContext('2d');
+        if(window.departmentChartInstance) window.departmentChartInstance.destroy();
+        window.departmentChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: data.map(d=>d.name),
+            datasets: [{
+              label: 'Số người chờ',
+              data: data.map(d=>d.waiting),
+              backgroundColor: '#1976d2',
+              borderRadius: 8,
+              maxBarThickness: 60
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              title: { display: false }
+            },
+            scales: {
+              x: { grid: {display:false}, ticks: {font: {size:15}} },
+              y: { beginAtZero:true, grid:{color:'#e3eaf6'}, ticks:{stepSize:1, font:{size:15}} }
+            }
+          }
+        });
+      }
+      renderDepartmentChart();
+      // Đổi tên nav-link cuối theo quyền nếu cần
+      const role = localStorage.getItem('role');
+      if (role !== 'admin') {
+        const userNav = document.getElementById('user-nav-link');
+        if (userNav) userNav.innerText = 'Thông tin cá nhân';
+      }
     </script>
 </body>
 </html>

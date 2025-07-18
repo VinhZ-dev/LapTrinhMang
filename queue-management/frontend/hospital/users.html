@@ -17,7 +17,8 @@
           <a href="index.html" class="nav-link">Tổng quan</a>
           <a href="queue.html" class="nav-link">Hàng đợi</a>
           <a href="appointments.html" class="nav-link">Lịch hẹn</a>
-          <a href="users.html" class="nav-link active">Thông tin cá nhân</a>
+          <a href="departments.html" class="nav-link">Khoa phòng</a>
+          <a href="users.html" class="nav-link active" id="user-nav-link">Người dùng</a>
         </nav>
         <div class="user-menu">
           <div class="user-info">
@@ -31,12 +32,9 @@
   <main class="main">
     <div class="container">
       <section class="section active">
-        <div class="section-header">
-          <h2>Thông tin cá nhân</h2>
-          <p>Xem và cập nhật thông tin tài khoản của bạn</p>
-        </div>
+        <div class="section-header" id="section-title"></div>
         <div id="profile-info" class="profile-info-card"></div>
-        <div id="admin-user-manage"></div>
+        <div id="admin-user-table"></div>
       </section>
     </div>
   </main>
@@ -46,34 +44,170 @@
     const role = localStorage.getItem('role');
     if (!token) window.location.href = 'login.html';
     document.getElementById('current-user').innerText = role ? role : '';
-    // Lấy thông tin user hiện tại
-    fetch('http://localhost:8000/users', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    })
-    .then(res => res.json())
-    .then(users => {
-      let user;
-      if (role === 'admin' || role === 'receptionist') {
-        // Nếu là admin, lấy user đầu tiên (hoặc có thể chọn user khác nếu muốn)
-        user = users[0];
-        // Hiển thị nút chuyển sang quản lý user
-        document.getElementById('admin-user-manage').innerHTML = '<a href="#" onclick="window.location.href=\'users.html\'" class="btn btn-secondary">Quản lý người dùng</a>';
-      } else {
-        // Nếu là user thường, chỉ lấy chính mình
-        user = users[0];
+    // Đổi tên nav-link theo quyền
+    if (role !== 'admin') document.getElementById('user-nav-link').innerText = 'Thông tin cá nhân';
+    // Sau khi xác định role và token:
+    if (role === 'patient') {
+      // Ẩn mục Hàng đợi trên nav
+      const nav = document.querySelector('.nav');
+      if (nav) {
+        const queueLink = nav.querySelector('a[href="queue.html"]');
+        if (queueLink) queueLink.style.display = 'none';
       }
-      if (!user) return;
-      document.getElementById('profile-info').innerHTML = `
-        <div class="profile-row"><b>Họ tên:</b> ${user.FullName || ''}</div>
-        <div class="profile-row"><b>Tên đăng nhập:</b> ${user.Username || ''}</div>
-        <div class="profile-row"><b>Email:</b> ${user.Email || ''}</div>
-        <div class="profile-row"><b>Điện thoại:</b> ${user.Phone || ''}</div>
-        <div class="profile-row"><b>Ngày sinh:</b> ${user.DateOfBirth ? new Date(user.DateOfBirth).toLocaleDateString() : ''}</div>
-        <div class="profile-row"><b>Giới tính:</b> ${user.Gender || ''}</div>
-        <div class="profile-row"><b>Địa chỉ:</b> ${user.Address || ''}</div>
-        <div class="profile-row"><b>Vai trò:</b> ${user.Role || ''}</div>
-      `;
-    });
+    }
+    // Nếu là admin: hiển thị bảng user, cho phép đổi quyền, xóa tài khoản
+    if (role === 'admin') {
+      document.getElementById('section-title').innerHTML = `<h2>Quản lý người dùng</h2><p>Xem, chỉnh sửa quyền, xóa tài khoản</p>`;
+      fetch('http://localhost:8000/users', { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(res => res.json())
+        .then(users => {
+         let html = `<div class='user-table-wrap'><table class='user-table'>
+           <thead><tr>
+             <th>Họ tên</th><th>Tên đăng nhập</th><th>Email</th><th>Điện thoại</th><th>Ngày sinh</th><th>Giới tính</th><th>Địa chỉ</th><th>Vai trò</th><th>Hành động</th>
+           </tr></thead><tbody>`;
+         users.forEach(u => {
+           html += `<tr>
+             <td>${u.FullName||''}</td>
+             <td>${u.Username||''}</td>
+             <td>${u.Email||''}</td>
+             <td>${u.Phone||''}</td>
+             <td>${u.DateOfBirth ? new Date(u.DateOfBirth).toLocaleDateString() : ''}</td>
+             <td>${u.Gender||''}</td>
+             <td>${u.Address||''}</td>
+             <td>
+               <select data-uid="${u.UserId}" class="role-select">
+                 <option value="admin" ${u.Role==='admin'?'selected':''}>admin</option>
+                 <option value="doctor" ${u.Role==='doctor'?'selected':''}>doctor</option>
+                 <option value="receptionist" ${u.Role==='receptionist'?'selected':''}>receptionist</option>
+                 <option value="patient" ${u.Role==='patient'?'selected':''}>patient</option>
+               </select>
+             </td>
+             <td style='display:flex;gap:0.5rem;'>
+               <button class='btn btn-primary' onclick='saveRole(${u.UserId})'>Lưu</button>
+               <button class='btn btn-danger' onclick='deleteUser(${u.UserId},"${u.FullName||u.Username}")'>Xóa</button>
+             </td>
+           </tr>`;
+         });
+         html += `</tbody></table></div>`;
+         document.getElementById('admin-user-table').innerHTML = html;
+        });
+      window.saveRole = function(uid) {
+        const sel = document.querySelector(`select[data-uid="${uid}"]`);
+        const newRole = sel.value;
+        fetch(`http://localhost:8000/users/${uid}/role`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ role: newRole })
+        }).then(res => {
+          if (res.ok) alert('Cập nhật vai trò thành công!');
+          else alert('Lỗi cập nhật vai trò!');
+        });
+      }
+     window.deleteUser = function(uid, name) {
+       if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản "${name}"?`)) return;
+       fetch(`http://localhost:8000/users/${uid}`, {
+         method: 'DELETE',
+         headers: { 'Authorization': 'Bearer ' + token }
+       }).then(res => {
+         if (res.ok) { alert('Đã xóa tài khoản!'); location.reload(); }
+         else alert('Lỗi khi xóa tài khoản!');
+       });
+     }
+      document.getElementById('profile-info').style.display = 'none';
+    } else {
+      document.getElementById('section-title').innerHTML = `<h2 style="text-align:center;font-size:2rem;color:#1976d2;margin-bottom:0.5rem;">Thông tin cá nhân</h2><p style="text-align:center;color:#888;">Xem và cập nhật thông tin tài khoản của bạn</p>`;
+      let currentUser = null;
+      function renderProfile(user) {
+        currentUser = user;
+        document.getElementById('profile-info').innerHTML = `
+          <div id="profile-view" style="width:100%;max-width:400px;background:#fff;border-radius:12px;box-shadow:0 2px 12px #1976d220;padding:2rem 1.5rem 1.5rem 1.5rem;margin:0 auto;">
+            <div class="profile-row"><b>Họ tên:</b> ${user.FullName || ''}</div>
+            <div class="profile-row"><b>Tên đăng nhập:</b> ${user.Username || ''}</div>
+            <div class="profile-row"><b>Email:</b> ${user.Email || ''}</div>
+            <div class="profile-row"><b>Điện thoại:</b> ${user.Phone || ''}</div>
+            <div class="profile-row"><b>Ngày sinh:</b> ${user.DateOfBirth ? new Date(user.DateOfBirth).toLocaleDateString() : ''}</div>
+            <div class="profile-row"><b>Giới tính:</b> ${user.Gender || ''}</div>
+            <div class="profile-row"><b>Địa chỉ:</b> ${user.Address || ''}</div>
+            <div class="profile-row"><b>Vai trò:</b> ${user.Role || ''}</div>
+            <div style="text-align:center;margin-top:1.2rem;">
+              <button class="btn btn-primary" style="min-width:120px;" onclick="showEditProfile()">Chỉnh sửa</button>
+            </div>
+          </div>
+        `;
+      }
+      window.showEditProfile = function() {
+        const user = currentUser;
+        document.getElementById('profile-info').innerHTML = `
+          <form id="edit-profile-form" style="width:100%;max-width:440px;background:#fff;border-radius:16px;box-shadow:0 4px 24px #1976d220;padding:2.2rem 2rem 1.7rem 2rem;margin:0 auto;display:flex;flex-direction:column;align-items:center;">
+            <h3 style='color:#1976d2;font-size:1.35rem;margin-bottom:1.5rem;text-align:center;'>Chỉnh sửa thông tin cá nhân</h3>
+            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
+              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Họ tên</label>
+              <input type="text" name="FullName" value="${user.FullName||''}" required style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
+            </div>
+            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
+              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Email</label>
+              <input type="email" name="Email" value="${user.Email||''}" style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
+            </div>
+            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
+              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Điện thoại</label>
+              <input type="text" name="Phone" value="${user.Phone||''}" style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
+            </div>
+            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
+              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Ngày sinh</label>
+              <input type="date" name="DateOfBirth" value="${user.DateOfBirth ? new Date(user.DateOfBirth).toISOString().slice(0,10) : ''}" style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
+            </div>
+            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
+              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Giới tính</label>
+              <select name="Gender" style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
+                <option value="">--</option>
+                <option value="nam" ${user.Gender==='nam'?'selected':''}>Nam</option>
+                <option value="nữ" ${user.Gender==='nữ'?'selected':''}>Nữ</option>
+              </select>
+            </div>
+            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
+              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Địa chỉ</label>
+              <input type="text" name="Address" value="${user.Address||''}" style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
+            </div>
+            <div style="text-align:center;margin-top:1.5rem;width:100%;display:flex;justify-content:center;gap:1.2rem;">
+              <button type="submit" class="btn btn-primary" style="min-width:120px;font-size:1.08rem;padding:0.7rem 0;">Lưu</button>
+              <button type="button" class="btn btn-danger" style="min-width:90px;font-size:1.08rem;padding:0.7rem 0;" onclick="renderProfile(currentUser)">Hủy</button>
+            </div>
+          </form>
+        `;
+        document.querySelectorAll('#edit-profile-form input, #edit-profile-form select').forEach(el => {
+          el.onfocus = function() { this.style.border = '1.5px solid #1976d2'; };
+          el.onblur = function() { this.style.border = '1.5px solid #cfd8dc'; };
+        });
+        document.getElementById('edit-profile-form').onsubmit = async function(e) {
+          e.preventDefault();
+          const form = e.target;
+          const data = {
+            FullName: form.FullName.value,
+            Email: form.Email.value,
+            Phone: form.Phone.value,
+            DateOfBirth: form.DateOfBirth.value ? new Date(form.DateOfBirth.value).toISOString() : null,
+            Gender: form.Gender.value,
+            Address: form.Address.value
+          };
+          const res = await fetch('http://localhost:8000/users/me', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(data)
+          });
+          if (res.ok) {
+            const updated = await res.json();
+            renderProfile(updated);
+            alert('Cập nhật thành công!');
+          } else {
+            alert('Lỗi khi cập nhật thông tin!');
+          }
+        };
+      };
+      fetch('http://localhost:8000/users/me', { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(res => res.json())
+        .then(user => { if (user) renderProfile(user); });
+      document.getElementById('admin-user-table').style.display = 'none';
+    }
     function logout() {
       localStorage.clear();
       window.location.href = 'login.html';
@@ -90,7 +224,74 @@
       font-size: 1.1rem;
     }
     .profile-row { margin-bottom: 0.7rem; }
-    #admin-user-manage { text-align: center; margin-top: 1.5rem; }
+    .user-table-wrap {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 16px #1976d220;
+      padding: 2rem 1rem 2rem 1rem;
+      margin: 2rem auto 0 auto;
+      max-width: 1100px;
+      overflow-x: auto;
+    }
+    .user-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 1.08rem;
+      background: #fff;
+    }
+    .user-table th, .user-table td {
+      padding: 0.7rem 0.6rem;
+      border-bottom: 1px solid #e3eaf6;
+      text-align: left;
+    }
+    .user-table th {
+      background: #f5f7fa;
+      color: #1976d2;
+      font-weight: 600;
+      font-size: 1.08rem;
+    }
+    .user-table tr:last-child td { border-bottom: none; }
+    .user-table select {
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      border: 1px solid #cfd8dc;
+      font-size: 1rem;
+      background: #f8fafc;
+      transition: border 0.2s;
+    }
+    .user-table select:focus { border: 1.5px solid #1976d2; }
+    .btn.btn-primary {
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.45rem 1.1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      box-shadow: 0 2px 8px #1976d220;
+    }
+    .btn.btn-primary:hover, .btn.btn-primary:focus {
+      background: #1565c0;
+      transform: translateY(-2px) scale(1.03);
+    }
+    .btn.btn-danger {
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.45rem 1.1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      box-shadow: 0 2px 8px #e5393520;
+    }
+    .btn.btn-danger:hover, .btn.btn-danger:focus {
+      background: #b71c1c;
+      transform: translateY(-2px) scale(1.03);
+    }
   </style>
 </body>
 </html> 

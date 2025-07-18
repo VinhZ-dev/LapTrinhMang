@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Dashboard - Hệ thống bệnh viện</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header class="header">
@@ -17,7 +18,8 @@
           <a href="index.html" class="nav-link active">Tổng quan</a>
           <a href="queue.html" class="nav-link">Hàng đợi</a>
           <a href="appointments.html" class="nav-link">Lịch hẹn</a>
-          <a href="users.html" class="nav-link" id="admin-menu">Người dùng</a>
+          <a href="departments.html" class="nav-link">Khoa phòng</a>
+          <a href="users.html" class="nav-link" id="user-nav-link">Người dùng</a>
         </nav>
         <div class="user-menu">
           <div class="user-info">
@@ -69,6 +71,7 @@
           <h3>Thống kê theo khoa</h3>
           <div class="department-grid" id="department-stats"></div>
         </div>
+        <canvas id="statsChart" style="max-width:600px;margin:2rem auto 0 auto;display:block;"></canvas>
       </section>
     </div>
   </main>
@@ -78,48 +81,64 @@
     const role = localStorage.getItem('role');
     if (!token) window.location.href = 'login.html';
     document.getElementById('current-user').innerText = role ? role : '';
-    // Ẩn hoàn toàn menu Khoa phòng nếu là patient
+    // Đổi tên nav-link cuối theo quyền nếu cần
+    if (role !== 'admin') {
+      const userNav = document.getElementById('user-nav-link');
+      if (userNav) userNav.innerText = 'Thông tin cá nhân';
+    }
+    // Sau khi xác định role và token:
     if (role === 'patient') {
+      // Ẩn các mục Đã hoàn thành và Thời gian chờ TB (phút) trên dashboard
+      const statCards = document.querySelectorAll('.stat-card');
+      if (statCards.length >= 4) {
+        statCards[2].style.display = 'none'; // Đã hoàn thành
+        statCards[3].style.display = 'none'; // Thời gian chờ TB
+      }
+      // Ẩn mục Hàng đợi trên nav
       const nav = document.querySelector('.nav');
       if (nav) {
-        const deptLink = nav.querySelector('a[href="departments.html"]');
-        if (deptLink) deptLink.remove();
+        const queueLink = nav.querySelector('a[href="queue.html"]');
+        if (queueLink) queueLink.style.display = 'none';
       }
+      // 1. Ẩn biểu đồ nếu là patient
+      document.getElementById('statsChart').style.display = 'none';
     }
 
-    // Hàm render danh sách hàng đợi động
-    function renderQueues(data) {
+    // Hàm render danh sách hàng đợi động (mỗi người một dòng)
+    function renderQueuesTable(data) {
       const grid = document.getElementById('department-stats');
       grid.innerHTML = '';
       if (!Array.isArray(data) || data.length === 0) {
         grid.innerHTML = '<div style="color:#888;">Không có dữ liệu hàng đợi.</div>';
         return;
       }
+      let table = `<table class='queue-table'><thead><tr><th>Khoa</th><th>Tên bệnh nhân</th><th>Vị trí</th><th>Trạng thái</th><th>Ước tính chờ</th>`;
+      if (role !== 'patient') table += '<th>Thao tác</th>';
+      table += '</tr></thead><tbody>';
       data.forEach(q => {
-        let html = `<div class='department-card'><h4>${q.department_name}</h4>`;
-        if (role === 'patient' && q.my_position) {
-          html += `<div>Vị trí của bạn: <b>#${q.my_position}</b> (${q.my_status === 'waiting' ? 'Đang chờ' : 'Đang khám'})</div>`;
-        } else if (q.current_serving) {
-          html += `<div>Đang phục vụ: <b>${q.current_serving.patient_name || ''} (#${q.current_serving.position || ''})</b></div>`;
-        }
-        html += `<ul class='queue-list'>`;
-        q.waiting_queue.forEach(w => {
-          html += `<li>${w.patient_name} (#${w.position})</li>`;
-        });
-        html += `</ul><div style='margin-top:0.5rem;color:#888;'>Ước tính chờ: ${q.estimated_wait_time} phút</div>`;
-        // Nút thao tác cho admin/receptionist/doctor/nurse
-        if (role !== 'patient') {
-          html += `<div style='margin-top:0.5rem;'>`;
-          if (q.current_serving) {
-            html += `<button class='btn btn-primary' onclick='completeQueue(${q.department_id})'>Hoàn thành lượt</button> `;
-          } else if (q.waiting_queue.length > 0) {
-            html += `<button class='btn btn-secondary' onclick='startQueue(${q.department_id})'>Xác nhận phục vụ</button>`;
+        // Hiển thị từng người trong waiting_queue
+        q.waiting_queue.forEach((w, idx) => {
+          table += `<tr><td>${q.department_name}</td><td>${w.patient_name}</td><td>#${w.position}</td><td>Đang chờ</td><td>${(idx+1)*5} phút</td>`;
+          if (role !== 'patient') {
+            table += `<td>`;
+            if (idx === 0 && !q.current_serving) {
+              table += `<button class='btn btn-secondary' onclick='startQueue(${q.department_id})'>Xác nhận phục vụ</button>`;
+            }
+            table += `</td>`;
           }
-          html += `</div>`;
+          table += `</tr>`;
+        });
+        // Hiển thị người đang phục vụ
+        if (q.current_serving) {
+          table += `<tr><td>${q.department_name}</td><td>${q.current_serving.patient_name}</td><td>#${q.current_serving.position}</td><td>Đang khám</td><td>0 phút</td>`;
+          if (role !== 'patient') {
+            table += `<td><button class='btn btn-primary' onclick='completeQueue(${q.department_id})'>Hoàn thành lượt</button></td>`;
+          }
+          table += `</tr>`;
         }
-        html += `</div>`;
-        grid.innerHTML += html;
       });
+      table += '</tbody></table>';
+      grid.innerHTML = table;
     }
 
     // Gọi API lấy trạng thái hàng đợi
@@ -129,33 +148,280 @@
       })
       .then(res => res.json())
       .then(data => {
-        renderQueues(data);
+        renderQueuesTable(data);
       });
     }
-    loadQueues();
-    // WebSocket realtime
-    const ws = new WebSocket('ws://localhost:8000/ws/queue');
-    ws.onmessage = function(event) {
-      loadQueues();
-    };
+    // Toast notification
+    function showToast(msg, color = '#1976d2') {
+      let toast = document.getElementById('toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '30px';
+        toast.style.right = '30px';
+        toast.style.background = color;
+        toast.style.color = '#fff';
+        toast.style.padding = '1rem 2rem';
+        toast.style.borderRadius = '8px';
+        toast.style.fontWeight = '600';
+        toast.style.zIndex = 9999;
+        toast.style.boxShadow = '0 2px 8px rgba(25,118,210,0.15)';
+        document.body.appendChild(toast);
+      }
+      toast.innerText = msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 2500);
+    }
+
+    // Chart.js biểu đồ thống kê
+    let chart;
+    function renderChart(stats) {
+      const ctx = document.getElementById('statsChart').getContext('2d');
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: stats.department_stats.map(d => d.department_name),
+          datasets: [
+            {
+              label: 'Đang chờ',
+              data: stats.department_stats.map(d => d.waiting),
+              backgroundColor: '#e53935',
+            },
+            {
+              label: 'Đang khám',
+              data: stats.department_stats.map(d => d.in_progress),
+              backgroundColor: '#43a047',
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'top' } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    function renderQueueDashboard() {
+      fetch('http://localhost:8000/queue/status', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const grid = document.getElementById('department-stats');
+        if (!Array.isArray(data) || data.length === 0) {
+          grid.innerHTML = '<div style="color:#888;">Không có dữ liệu hàng đợi.</div>';
+          return;
+        }
+        let flat = [];
+        data.forEach(q => {
+          // Lấy tất cả bệnh nhân đang chờ xác nhận (waiting) của mỗi khoa
+          q.waiting_queue.forEach((w, idx) => {
+            flat.push({
+              department_id: q.department_id,
+              department_name: q.department_name,
+              patient_name: w.patient_name,
+              position: w.position,
+              status: 'waiting',
+              estimated_wait_time: (idx + 1) * 5 + ' phút',
+              scheduled_time: w.scheduled_time || ''
+            });
+          });
+          // Nếu có người đang khám (in_progress)
+          if (q.current_serving) {
+            flat.push({
+              department_id: q.department_id,
+              department_name: q.department_name,
+              patient_name: q.current_serving.patient_name,
+              position: q.current_serving.position,
+              status: 'in_progress',
+              estimated_wait_time: '0 phút',
+              scheduled_time: q.current_serving.scheduled_time || ''
+            });
+          }
+        });
+        if (flat.length === 0) {
+          grid.innerHTML = '<div style="color:#888;">Không có bệnh nhân nào đang chờ xác nhận.</div>';
+          return;
+        }
+        let html = `<table class='queue-table'><thead><tr><th>Khoa</th><th>Tên bệnh nhân</th><th>Vị trí</th><th>Giờ đăng ký</th><th>Trạng thái</th><th>Ước tính chờ</th><th></th></tr></thead><tbody>`;
+        flat.forEach(row => {
+          let statusText = row.status === 'waiting' ? 'Chờ xác nhận' : (row.status === 'in_progress' ? 'Đang khám' : 'Đã xong');
+          html += `<tr style='font-weight:400;'>`;
+          html += `<td>${row.department_name}</td><td>${row.patient_name}</td><td>#${row.position}</td><td>${row.scheduled_time ? new Date(row.scheduled_time).toLocaleTimeString() : ''}</td>`;
+          html += `<td class="status-cell ${row.status}">${statusText}</td>`;
+          html += `<td>${row.estimated_wait_time}</td>`;
+          if (role === 'admin' || role === 'doctor') {
+            if (row.status === 'waiting' && row.position === 1) {
+              html += `<td><button class='btn btn-secondary' onclick='startQueue(${row.department_id})'>Xác nhận phục vụ</button></td>`;
+            } else if (row.status === 'in_progress') {
+              html += `<td><button class='btn btn-primary' onclick='completeQueue(${row.department_id})'>Hoàn thành lượt</button></td>`;
+            } else {
+              html += '<td></td>';
+            }
+          } else {
+            html += '<td></td>';
+          }
+          html += `</tr>`;
+        });
+        html += '</tbody></table>';
+        grid.innerHTML = html;
+      });
+    }
+
+    // Thống kê tổng lượt, thời gian chờ TB, số lượt hoàn thành và render biểu đồ
+    function updateDashboardStats() {
+      fetch('http://localhost:8000/dashboard/stats', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('waiting-count').innerText = data.waiting_patients ?? 0;
+        document.getElementById('in-progress-count').innerText = data.in_progress_patients ?? 0;
+        document.getElementById('completed-count').innerText = data.completed_today ?? 0;
+        document.getElementById('avg-wait-time').innerText = data.avg_wait_time ?? 0;
+        renderChart(data);
+      });
+    }
+
+    if (role === 'patient') {
+      // Gọi API lấy danh sách hàng đợi tổng hợp cho tất cả các khoa
+      fetch('http://localhost:8000/queue/status', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        // Cập nhật số liệu Đang chờ và Đang khám
+        let waitingCount = 0;
+        let inProgressCount = 0;
+        if (Array.isArray(data)) {
+          data.forEach(q => {
+            waitingCount += Array.isArray(q.waiting_queue) ? q.waiting_queue.length : 0;
+            if (q.current_serving) inProgressCount++;
+          });
+        }
+        document.getElementById('waiting-count').innerText = waitingCount;
+        document.getElementById('in-progress-count').innerText = inProgressCount;
+        // Luôn render lại bảng danh sách hàng đợi bên dưới
+        const grid = document.getElementById('department-stats');
+        grid.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+          grid.innerHTML = '<div style="color:#888;">Không có dữ liệu hàng đợi.</div>';
+          return;
+        }
+        let table = `<table class='queue-table'><thead><tr><th>Khoa</th><th>Tên bệnh nhân</th><th>Vị trí</th><th>Trạng thái</th><th>Ước tính chờ</th></tr></thead><tbody>`;
+        data.forEach(q => {
+          q.waiting_queue.forEach((w, idx) => {
+            table += `<tr><td>${q.department_name}</td><td>${w.patient_name}</td><td>#${w.position}</td><td>Đang chờ</td><td>${(idx+1)*5} phút</td></tr>`;
+          });
+          if (q.current_serving) {
+            table += `<tr><td>${q.department_name}</td><td>${q.current_serving.patient_name}</td><td>#${q.current_serving.position}</td><td>Đang khám</td><td>0 phút</td></tr>`;
+          }
+        });
+        table += '</tbody></table>';
+        grid.innerHTML = table;
+      });
+      // Ẩn biểu đồ
+      document.getElementById('statsChart').style.display = 'none';
+      // Không gọi các hàm dashboard khác cho patient
+    } else {
+      updateDashboardStats();
+      renderQueueDashboard();
+      let ws;
+      if (role === 'admin' || role === 'doctor') {
+        ws = new WebSocket('ws://localhost:8000/ws/queue');
+        ws.onmessage = function(event) {
+          loadQueues();
+          updateDashboardStats();
+          renderQueueDashboard();
+          showToast('Có thay đổi mới trong hàng đợi!', '#1976d2');
+        };
+      }
+    }
     // Hàm xác nhận phục vụ (chuyển lượt đầu tiên sang in_progress)
     function startQueue(departmentId) {
       fetch(`http://localhost:8000/queue/start/${departmentId}`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token }
-      }).then(() => loadQueues());
+      }).then(() => { loadQueues(); updateDashboardStats(); });
     }
     // Hàm hoàn thành lượt (chuyển in_progress sang completed)
     function completeQueue(departmentId) {
       fetch(`http://localhost:8000/queue/complete/${departmentId}`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token }
-      }).then(() => loadQueues());
+      }).then(() => { loadQueues(); updateDashboardStats(); });
     }
     function logout() {
       localStorage.clear();
       window.location.href = 'login.html';
     }
   </script>
+  <style>
+    .queue-table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+    .queue-table th, .queue-table td { border: 1px solid #e3eaf6; padding: 0.7rem 0.5rem; text-align: center; }
+    .queue-table th { background: #f1f6fb; color: #1976d2; font-weight: 600; }
+    .queue-table tr:nth-child(even) { background: #f8fafc; }
+    .department-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+    .department-card {
+      background: #f8fafc;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(25, 118, 210, 0.07);
+      padding: 1.5rem 1.2rem;
+      min-width: 270px;
+      max-width: 340px;
+      flex: 1 1 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .department-card h4 {
+      color: #1976d2;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.7rem;
+    }
+    .queue-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+    .queue-table th, .queue-table td {
+      border: 1px solid #e3eaf6;
+      padding: 0.5rem 0.4rem;
+      text-align: center;
+      font-size: 1rem;
+    }
+    .queue-table th {
+      background: #f1f6fb;
+      color: #1976d2;
+      font-weight: 600;
+    }
+    .queue-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    .status-cell.in_progress { color: #43a047 !important; font-weight: 600; }
+    .status-cell.waiting { color: #e53935 !important; font-weight: 600; }
+    .status-cell.completed { color: #888 !important; font-weight: 600; }
+    @media (max-width: 900px) {
+      .department-grid {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.2rem;
+      }
+      .department-card {
+        min-width: 90vw;
+        max-width: 98vw;
+      }
+    }
+  </style>
 </body>
 </html> 

@@ -4,25 +4,91 @@
   <meta charset="UTF-8">
   <title>Đăng nhập hệ thống bệnh viện</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background: linear-gradient(120deg, #e3f0ff 0%, #f5f7fa 100%);
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      min-height: 100vh;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+      min-width: 320px;
+      margin: 6vh auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 32px #1976d220;
+      padding: 2.7rem 2.2rem 2.2rem 2.2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeInUp 0.7s cubic-bezier(.23,1.01,.32,1);
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .login-container h2 {
+      color: #1976d2; font-size: 1.7rem; font-weight: 700; margin-bottom: 1.5rem; letter-spacing: 1px;
+      text-align: center;
+    }
+    .form-group { width: 100%; margin-bottom: 1.2rem; }
+    .form-group label { font-weight: 500; color: #1976d2; margin-bottom: 0.3rem; display: block; }
+    .form-group input {
+      width: 100%;
+      max-width: 340px;
+      margin: 0 auto;
+      padding: 0.7rem 1rem;
+      border-radius: 7px;
+      border: 1px solid #cfd8dc;
+      font-size: 1rem;
+      transition: border 0.2s, box-shadow 0.2s;
+      outline: none;
+      background: #f8fafc;
+    }
+    .form-group input:focus {
+      border: 1.5px solid #1976d2; box-shadow: 0 0 0 2px #1976d230;
+      background: #fff;
+    }
+    .form-actions { width: 100%; margin-top: 0.5rem; }
+    .btn.btn-primary {
+      width: 100%; background: linear-gradient(90deg,#1976d2 60%,#43a047 100%); color: #fff; border: none; border-radius: 7px;
+      padding: 0.7rem 0; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.15s;
+      box-shadow: 0 2px 8px #1976d220;
+    }
+    .btn.btn-primary:hover, .btn.btn-primary:focus {
+      background: linear-gradient(90deg,#1565c0 60%,#388e3c 100%); transform: translateY(-2px) scale(1.03);
+    }
+    #login-error {
+      color: #e53935; margin-top: 0.7rem; font-size: 1rem; min-height: 1.2em; text-align: center; transition: opacity 0.3s;
+    }
+    .login-container a { color: #1976d2; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+    .login-container a:hover { color: #43a047; }
+    @media (max-width: 500px) {
+      .login-container { max-width: 98vw; padding: 1.2rem 0.5rem; }
+      .login-container h2 { font-size: 1.2rem; }
+    }
+  </style>
 </head>
 <body>
   <div class="login-container">
-    <h2>Đăng nhập hệ thống bệnh viện</h2>
+    <h2>Đăng nhập hệ thống</h2>
     <form id="login-form">
       <div class="form-group">
         <label for="username">Tên đăng nhập</label>
-        <input type="text" id="username" required>
+        <input type="text" id="username" required autocomplete="username">
       </div>
       <div class="form-group">
         <label for="password">Mật khẩu</label>
-        <input type="password" id="password" required>
+        <input type="password" id="password" required autocomplete="current-password">
       </div>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Đăng nhập</button>
       </div>
     </form>
-    <div id="login-error" style="color:red"></div>
-    <div style="margin-top:1rem;">
+    <div id="login-error"></div>
+    <div style="margin-top:1.2rem; font-size:0.98rem;">
       Chưa có tài khoản? <a href="register.html">Đăng ký</a>
     </div>
   </div>
@@ -44,6 +110,7 @@
         const data = await res.json();
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('role', data.user.Role);
+        localStorage.setItem('userId', data.user.UserId); // Thêm dòng này để lưu userId
         window.location.href = 'index.html';
       } else {
         document.getElementById('login-error').innerText = 'Sai tài khoản hoặc mật khẩu!';
