@@ -16,11 +16,18 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-class UserOut(UserBase):
+class UserOut(BaseModel):
     UserId: int
-    IsActive: bool
-    CreatedAt: datetime
-    UpdatedAt: datetime
+    Username: str
+    FullName: str
+    Role: str
+    Email: Optional[str] = None
+    Phone: Optional[str] = None
+    DateOfBirth: Optional[datetime] = None
+    Gender: Optional[str] = None
+    Address: Optional[str] = None
+    IsActive: Optional[bool] = True
+    DepartmentName: Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -64,6 +71,7 @@ class DoctorDepartmentCreate(DoctorDepartmentBase):
 class DoctorDepartmentOut(DoctorDepartmentBase):
     Id: int
     CreatedAt: datetime
+    Department: Optional[DepartmentOut] = None
     class Config:
         from_attributes = True
 
@@ -76,6 +84,12 @@ class AppointmentBase(BaseModel):
     Priority: str = "normal"
     ScheduledTime: Optional[datetime] = None
     Symptoms: Optional[str] = None
+    Diagnosis: Optional[str] = None
+    Prescription: Optional[str] = None
+    Notes: Optional[str] = None
+    CheckInTime: Optional[datetime] = None
+    StartTime: Optional[datetime] = None
+    EndTime: Optional[datetime] = None
 
 class AppointmentCreate(AppointmentBase):
     pass
@@ -91,6 +105,8 @@ class AppointmentOut(AppointmentBase):
     Notes: Optional[str] = None
     CreatedAt: datetime
     UpdatedAt: datetime
+    Patient: Optional[UserOut] = None
+    Doctor: Optional[UserOut] = None
     class Config:
         from_attributes = True
 

@@ -24,54 +24,11 @@ def init_hospital_database():
     try:
         # Create departments
         departments_data = [
-            {
-                "Name": "Emergency Department",
-                "Type": "emergency",
-                "Description": "24/7 emergency medical care",
-                "Location": "Ground Floor",
-                "Floor": "G",
-                "RoomNumber": "ER-01"
-            },
-            {
-                "Name": "Cardiology",
-                "Type": "cardiology",
-                "Description": "Heart and cardiovascular care",
-                "Location": "First Floor",
-                "Floor": "1",
-                "RoomNumber": "CARD-01"
-            },
-            {
-                "Name": "Neurology",
-                "Type": "neurology",
-                "Description": "Brain and nervous system care",
-                "Location": "Second Floor",
-                "Floor": "2",
-                "RoomNumber": "NEURO-01"
-            },
-            {
-                "Name": "Pediatrics",
-                "Type": "pediatrics",
-                "Description": "Children's healthcare",
-                "Location": "Third Floor",
-                "Floor": "3",
-                "RoomNumber": "PED-01"
-            },
-            {
-                "Name": "Orthopedics",
-                "Type": "orthopedics",
-                "Description": "Bone and joint care",
-                "Location": "Fourth Floor",
-                "Floor": "4",
-                "RoomNumber": "ORTHO-01"
-            },
-            {
-                "Name": "General Medicine",
-                "Type": "general",
-                "Description": "General medical care",
-                "Location": "Fifth Floor",
-                "Floor": "5",
-                "RoomNumber": "GEN-01"
-            }
+            {"Name": "Khoa Nội tổng hợp", "Type": "noi-tong-hop", "Description": "Khám và điều trị nội tổng hợp", "Location": "Tầng 1", "Floor": "1", "RoomNumber": "NOI-01"},
+            {"Name": "Khoa Nhi", "Type": "nhi", "Description": "Chăm sóc sức khỏe trẻ em", "Location": "Tầng 2", "Floor": "2", "RoomNumber": "NHI-01"},
+            {"Name": "Khoa Sản", "Type": "san", "Description": "Chăm sóc sức khỏe phụ nữ", "Location": "Tầng 3", "Floor": "3", "RoomNumber": "SAN-01"},
+            {"Name": "Khoa Ngoại", "Type": "ngoai", "Description": "Phẫu thuật và điều trị ngoại khoa", "Location": "Tầng 4", "Floor": "4", "RoomNumber": "NGOAI-01"},
+            {"Name": "Khoa Cấp cứu", "Type": "capcuu", "Description": "Chăm sóc y tế khẩn cấp 24/7", "Location": "Tầng trệt", "Floor": "G", "RoomNumber": "CC-01"}
         ]
         
         departments = []
@@ -91,75 +48,32 @@ def init_hospital_database():
                 departments.append(existing_dept)
                 print(f"Department already exists: {existing_dept.Name}")
         
-        # Create admin user
-        admin_user = db.query(models.User).filter(models.User.Username == "admin").first()
+        # Chỉ tạo 1 admin gốc
+        admin_user = db.query(models.User).filter(models.User.Username == "kan111").first()
         if not admin_user:
             admin_user = models.User(
-                Username="admin",
-                PasswordHash=get_password_hash("admin123"),
-                Email="admin@hospital.com",
-                Phone="0123456789",
-                FullName="Hospital Administrator",
+                Username="kan111",
+                PasswordHash=get_password_hash("111111"),
+                Email="admin@benhvien.com",
+                Phone="0909000000",
+                FullName="Quản trị viên gốc",
                 Role="admin",
                 IsActive=True
             )
             db.add(admin_user)
             db.commit()
             db.refresh(admin_user)
-            print("Created admin user")
+            print("Đã tạo admin gốc")
         else:
-            print("Admin user already exists")
+            print("Admin gốc đã tồn tại")
         
-        # Create doctors
+        # Chỉ tạo 5 bác sĩ
         doctors_data = [
-            {
-                "Username": "dr.smith",
-                "FullName": "Dr. John Smith",
-                "Email": "dr.smith@hospital.com",
-                "Phone": "0123456781",
-                "Role": "doctor",
-                "DepartmentId": 1  # Emergency
-            },
-            {
-                "Username": "dr.johnson",
-                "FullName": "Dr. Sarah Johnson",
-                "Email": "dr.johnson@hospital.com",
-                "Phone": "0123456782",
-                "Role": "doctor",
-                "DepartmentId": 2  # Cardiology
-            },
-            {
-                "Username": "dr.williams",
-                "FullName": "Dr. Michael Williams",
-                "Email": "dr.williams@hospital.com",
-                "Phone": "0123456783",
-                "Role": "doctor",
-                "DepartmentId": 3  # Neurology
-            },
-            {
-                "Username": "dr.brown",
-                "FullName": "Dr. Emily Brown",
-                "Email": "dr.brown@hospital.com",
-                "Phone": "0123456784",
-                "Role": "doctor",
-                "DepartmentId": 4  # Pediatrics
-            },
-            {
-                "Username": "dr.davis",
-                "FullName": "Dr. David Davis",
-                "Email": "dr.davis@hospital.com",
-                "Phone": "0123456785",
-                "Role": "doctor",
-                "DepartmentId": 5  # Orthopedics
-            },
-            {
-                "Username": "dr.miller",
-                "FullName": "Dr. Lisa Miller",
-                "Email": "dr.miller@hospital.com",
-                "Phone": "0123456786",
-                "Role": "doctor",
-                "DepartmentId": 6  # General Medicine
-            }
+            {"Username": "bs.nguyen", "FullName": "BS. Nguyễn Văn A", "Email": "nguyenvana@benhvien.com", "Phone": "0901000001", "Role": "doctor", "DepartmentId": 1},
+            {"Username": "bs.tran", "FullName": "BS. Trần Thị B", "Email": "tranthib@benhvien.com", "Phone": "0901000002", "Role": "doctor", "DepartmentId": 2},
+            {"Username": "bs.le", "FullName": "BS. Lê Văn C", "Email": "levanc@benhvien.com", "Phone": "0901000003", "Role": "doctor", "DepartmentId": 3},
+            {"Username": "bs.pham", "FullName": "BS. Phạm Thị D", "Email": "phamthid@benhvien.com", "Phone": "0901000004", "Role": "doctor", "DepartmentId": 4},
+            {"Username": "bs.hoang", "FullName": "BS. Hoàng Văn E", "Email": "hoangvane@benhvien.com", "Phone": "0901000005", "Role": "doctor", "DepartmentId": 5}
         ]
         
         doctors = []
@@ -171,7 +85,7 @@ def init_hospital_database():
             if not existing_doctor:
                 doctor = models.User(
                     Username=doctor_data["Username"],
-                    PasswordHash=get_password_hash("doctor123"),
+                    PasswordHash=get_password_hash("111111"),
                     Email=doctor_data["Email"],
                     Phone=doctor_data["Phone"],
                     FullName=doctor_data["FullName"],
@@ -197,112 +111,13 @@ def init_hospital_database():
                 doctors.append(existing_doctor)
                 print(f"Doctor already exists: {existing_doctor.FullName}")
         
-        # Create nurses
-        nurses_data = [
-            {
-                "Username": "nurse.anderson",
-                "FullName": "Nurse Jennifer Anderson",
-                "Email": "nurse.anderson@hospital.com",
-                "Phone": "0123456791",
-                "Role": "nurse"
-            },
-            {
-                "Username": "nurse.taylor",
-                "FullName": "Nurse Robert Taylor",
-                "Email": "nurse.taylor@hospital.com",
-                "Phone": "0123456792",
-                "Role": "nurse"
-            },
-            {
-                "Username": "nurse.thomas",
-                "FullName": "Nurse Maria Thomas",
-                "Email": "nurse.thomas@hospital.com",
-                "Phone": "0123456793",
-                "Role": "nurse"
-            }
-        ]
-        
-        for nurse_data in nurses_data:
-            existing_nurse = db.query(models.User).filter(
-                models.User.Username == nurse_data["Username"]
-            ).first()
-            
-            if not existing_nurse:
-                nurse = models.User(
-                    Username=nurse_data["Username"],
-                    PasswordHash=get_password_hash("nurse123"),
-                    Email=nurse_data["Email"],
-                    Phone=nurse_data["Phone"],
-                    FullName=nurse_data["FullName"],
-                    Role=nurse_data["Role"],
-                    IsActive=True
-                )
-                db.add(nurse)
-                db.commit()
-                print(f"Created nurse: {nurse.FullName}")
-            else:
-                print(f"Nurse already exists: {existing_nurse.FullName}")
-        
-        # Create receptionist
-        receptionist = db.query(models.User).filter(models.User.Username == "receptionist").first()
-        if not receptionist:
-            receptionist = models.User(
-                Username="receptionist",
-                PasswordHash=get_password_hash("reception123"),
-                Email="reception@hospital.com",
-                Phone="0123456700",
-                FullName="Hospital Receptionist",
-                Role="receptionist",
-                IsActive=True
-            )
-            db.add(receptionist)
-            db.commit()
-            print("Created receptionist")
-        else:
-            print("Receptionist already exists")
-        
-        # Create sample patients
+        # Chỉ tạo 5 bệnh nhân
         patients_data = [
-            {
-                "Username": "patient.001",
-                "FullName": "Alice Johnson",
-                "Email": "alice.johnson@email.com",
-                "Phone": "0987654321",
-                "DateOfBirth": datetime(1985, 5, 15),
-                "Gender": "Female"
-            },
-            {
-                "Username": "patient.002",
-                "FullName": "Bob Smith",
-                "Email": "bob.smith@email.com",
-                "Phone": "0987654322",
-                "DateOfBirth": datetime(1978, 8, 22),
-                "Gender": "Male"
-            },
-            {
-                "Username": "patient.003",
-                "FullName": "Carol Davis",
-                "Email": "carol.davis@email.com",
-                "Phone": "0987654323",
-                "DateOfBirth": datetime(1992, 3, 10),
-                "Gender": "Female"
-            },
-            {
-                "Username": "patient.004",
-                "FullName": "David Wilson",
-                "Email": "david.wilson@email.com",
-                "Phone": "0987654324",
-                "DateOfBirth": datetime(1965, 11, 5),
-                "Gender": "Male"
-            },
-            {
-                "Username": "patient.005",
-                "FullName": "Eva Brown",
-                "Email": "eva.brown@email.com",
-                "Phone": "0987654325",
-                "DateOfBirth": datetime(1988, 7, 18),
-                "Gender": "Female"
-            }
+            {"Username": "bn.001", "FullName": "Nguyễn Thị Mai", "Email": "mainguyen@email.com", "Phone": "0911000001", "DateOfBirth": datetime(1990, 1, 1), "Gender": "Nữ"},
+            {"Username": "bn.002", "FullName": "Trần Văn Bình", "Email": "binhtran@email.com", "Phone": "0911000002", "DateOfBirth": datetime(1985, 2, 2), "Gender": "Nam"},
+            {"Username": "bn.003", "FullName": "Lê Thị Cúc", "Email": "cuclt@email.com", "Phone": "0911000003", "DateOfBirth": datetime(2000, 3, 3), "Gender": "Nữ"},
+            {"Username": "bn.004", "FullName": "Phạm Văn Dũng", "Email": "dungpham@email.com", "Phone": "0911000004", "DateOfBirth": datetime(1975, 4, 4), "Gender": "Nam"},
+            {"Username": "bn.005", "FullName": "Hoàng Thị Hạnh", "Email": "hanhhoang@email.com", "Phone": "0911000005", "DateOfBirth": datetime(1995, 5, 5), "Gender": "Nữ"}
         ]
         
         patients = []
@@ -314,7 +129,7 @@ def init_hospital_database():
             if not existing_patient:
                 patient = models.User(
                     Username=patient_data["Username"],
-                    PasswordHash=get_password_hash("patient123"),
+                    PasswordHash=get_password_hash("111111"),
                     Email=patient_data["Email"],
                     Phone=patient_data["Phone"],
                     FullName=patient_data["FullName"],
@@ -334,17 +149,17 @@ def init_hospital_database():
         
         # Create sample appointments
         symptoms_list = [
-            "Headache and fever",
-            "Chest pain",
-            "Back pain",
-            "Fever and cough",
-            "Abdominal pain",
-            "Dizziness",
-            "Shortness of breath",
-            "Joint pain"
+            "Đau đầu, sốt cao",
+            "Đau ngực, khó thở",
+            "Đau lưng",
+            "Sốt, ho",
+            "Đau bụng",
+            "Chóng mặt",
+            "Khó thở, mệt mỏi",
+            "Đau khớp, sưng tấy"
         ]
         
-        priorities = ["low", "normal", "high", "emergency"]
+        priorities = ["thấp", "bình thường", "cao", "khẩn cấp"]
         
         for i, patient in enumerate(patients):
             # Create 1-3 appointments per patient

@@ -1,297 +1,1864 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Thông tin cá nhân - Hệ thống bệnh viện</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông tin cá nhân - Hệ thống bệnh viện</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --primary-blue-dark: #1d4ed8;
+            --secondary-blue: #e0f2fe;
+            --accent-blue: #0ea5e9;
+            --light-blue: #f0f9ff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --white: #ffffff;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #0ea5e9;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--light-blue) 0%, var(--secondary-blue) 50%, #bfdbfe 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated background elements */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 80%, rgba(14, 165, 233, 0.08) 0%, transparent 50%);
+            animation: backgroundFloat 30s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(1deg); }
+            66% { transform: translate(-20px, 20px) rotate(-1deg); }
+        }
+
+        /* Header Styles */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: fadeInLeft 1s ease-out 0.2s both;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.1));
+        }
+
+        .logo-icon:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 4px 8px rgba(37, 99, 235, 0.2));
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            letter-spacing: -0.025em;
+        }
+
+        .nav {
+            display: flex;
+            gap: 0.5rem;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        .nav-link {
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .nav-link:hover::before {
+            left: 100%;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-light));
+            color: var(--white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: fadeInRight 1s ease-out 0.6s both;
+        }
+
+        .user-info {
+            padding: 0.5rem 1rem;
+            background: var(--gray-100);
+            border-radius: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-logout {
+            padding: 0.75rem 1.25rem;
+            background: linear-gradient(135deg, var(--error), #dc2626);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-logout:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Main Content */
+        .main {
+            padding: 2rem 0;
+        }
+
+        .section {
+            animation: fadeInUp 1s ease-out 0.8s both;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.025em;
+        }
+
+        .section-header p {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Profile Info Card */
+        .profile-info-card {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            gap: 2rem;
+            animation: slideInUp 0.6s ease-out 0.2s both;
+        }
+        .profile-view-card {
+            flex: 1 1 0;
+            min-width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-view-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-blue), var(--accent-blue), var(--primary-blue-light));
+            background-size: 200% 100%;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-light));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 2rem;
+            color: var(--white);
+            box-shadow: var(--shadow-lg);
+            animation: profilePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes profilePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .profile-name {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-role {
+            text-align: center;
+            padding: 0.5rem 1rem;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary-blue);
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            display: inline-block;
+            margin: 0 auto 2rem;
+        }
+
+        .profile-info-grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .profile-row {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-blue);
+            transition: all 0.3s ease;
+        }
+
+        .profile-row:hover {
+            background: var(--light-blue);
+            transform: translateX(4px);
+        }
+
+        .profile-row-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(37, 99, 235, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-blue);
+            margin-right: 1rem;
+            font-size: 1.125rem;
+        }
+
+        .profile-row-content {
+            flex: 1;
+        }
+
+        .profile-row-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-row-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Edit Profile Form */
+        .edit-profile-form {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            overflow: hidden;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .edit-profile-form::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--success), #059669);
+            background-size: 200% 100%;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        .edit-form-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            background: var(--white);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-input.valid {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .form-input.invalid {
+            border-color: var(--error);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        /* Admin User Management */
+        .user-management-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+            border-radius: 24px;
+            padding: 0;
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+            animation: slideInUp 0.6s ease-out 0.2s both;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-light));
+            color: var(--white);
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .table-stats {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .user-table-wrap {
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--white);
+            min-width: 800px;
+        }
+
+        .user-table th,
+        .user-table td {
+            padding: 1.25rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+            transition: all 0.3s ease;
+        }
+
+        .user-table th {
+            background: linear-gradient(135deg, var(--gray-50), var(--gray-100));
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .user-table tbody tr {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .user-table tbody tr:hover {
+            background: linear-gradient(135deg, var(--light-blue), rgba(240, 249, 255, 0.5));
+            transform: scale(1.005);
+        }
+
+        .user-table tbody tr:nth-child(even) {
+            background: var(--gray-50);
+        }
+
+        .user-table tbody tr:hover:nth-child(even) {
+            background: linear-gradient(135deg, var(--light-blue), rgba(240, 249, 255, 0.5));
+        }
+
+        .user-avatar-cell {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-light));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .user-username {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .role-select {
+            padding: 0.5rem 0.75rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: var(--white);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .role-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .role-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .role-badge.admin {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+        }
+
+        .role-badge.doctor {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .role-badge.receptionist {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .role-badge.patient {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary-blue);
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-light));
+            color: var(--white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-blue-dark), var(--primary-blue));
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: var(--white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--error), #dc2626);
+            color: var(--white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--gray-300), #9ca3af);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            min-width: 300px;
+            max-width: 400px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-light));
+            color: var(--white);
+            padding: 1rem 1.5rem;
+            border-radius: 16px;
+            font-weight: 500;
+            box-shadow: var(--shadow-xl);
+            z-index: 3000;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toast.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, var(--error), #dc2626);
+        }
+
+        .toast.warning {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex !important;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+            border-radius: 24px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90vw;
+            box-shadow: var(--shadow-xl);
+            animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            text-align: center;
+        }
+
+        .modal-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 1.5rem;
+            color: var(--white);
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .modal-message {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.5;
+            color: var(--primary-blue);
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main {
+                padding: 1rem 0;
+            }
+            
+            .section-header h2 {
+                font-size: 1.875rem;
+            }
+            
+            .profile-view-card,
+            .edit-profile-form {
+                padding: 2rem 1.5rem;
+            }
+
+            .user-table-wrap {
+                padding: 1rem;
+            }
+
+            .user-table {
+                font-size: 0.875rem;
+            }
+            
+            .user-table th,
+            .user-table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .user-actions {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .nav-link {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+            }
+            
+            .user-menu {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .profile-view-card,
+            .edit-profile-form {
+                padding: 1.5rem;
+            }
+
+            .profile-info-grid {
+                gap: 1rem;
+            }
+
+            .profile-row {
+                padding: 0.75rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* Animation keyframes */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--gray-100);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--primary-blue), var(--primary-blue-light));
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--primary-blue-dark), var(--primary-blue));
+        }
+
+        /* Staggered table animations */
+        .user-table tbody tr:nth-child(1) { animation: slideInUp 0.3s ease-out 0.1s both; }
+        .user-table tbody tr:nth-child(2) { animation: slideInUp 0.3s ease-out 0.2s both; }
+        .user-table tbody tr:nth-child(3) { animation: slideInUp 0.3s ease-out 0.3s both; }
+        .user-table tbody tr:nth-child(4) { animation: slideInUp 0.3s ease-out 0.4s both; }
+        .user-table tbody tr:nth-child(5) { animation: slideInUp 0.3s ease-out 0.5s both; }
+
+        .profile-two-cols {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+        @media (max-width: 900px) {
+            .profile-two-cols { flex-direction: column; gap: 1rem; }
+        }
+    </style>
 </head>
 <body>
-  <header class="header">
-    <div class="container">
-      <div class="header-content">
-        <div class="logo">
-          <span style="font-size:2rem;color:#1976d2;">🏥</span>
-          <h1>Bệnh Viện Đa Khoa</h1>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="https://cdn.prod.website-files.com/63a9fb94e473f36dbe99c1b1/67d04afaede8127aa5b9853c_AD_4nXfYK_3nS8dX0rE9NKz81i9My2x-fchDiHNhbKv-i7YSBhZ3qCrOe7rCGpiCiS3rh7MbB11b3xAhQ-r3szudZNkuo5Ay6K6Wx_OQ4M41S_NNc2GNQfcrTkt9qYXnXPnMjyoqgaVk.png" alt="Hospital Logo" class="logo-icon">
+                    <h1>Bệnh Viện Đa Khoa</h1>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        Tổng quan
+                    </a>
+                    <a href="queue.html" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        Hàng đợi
+                    </a>
+                    <a href="appointments.html" class="nav-link">
+                        <i class="fas fa-calendar-alt"></i>
+                        Lịch hẹn
+                    </a>
+                    <a href="departments.html" class="nav-link">
+                        <i class="fas fa-building"></i>
+                        Khoa phòng
+                    </a>
+                    <a href="users.html" class="nav-link active" id="user-nav-link">
+                        <i class="fas fa-user-cog"></i>
+                        Người dùng
+                    </a>
+                </nav>
+                <div class="user-menu">
+                    <div class="user-info">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="current-user"></span>
+                    </div>
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Đăng xuất
+                    </button>
+                </div>
+            </div>
         </div>
-        <nav class="nav">
-          <a href="index.html" class="nav-link">Tổng quan</a>
-          <a href="queue.html" class="nav-link">Hàng đợi</a>
-          <a href="appointments.html" class="nav-link">Lịch hẹn</a>
-          <a href="departments.html" class="nav-link">Khoa phòng</a>
-          <a href="users.html" class="nav-link active" id="user-nav-link">Người dùng</a>
-        </nav>
-        <div class="user-menu">
-          <div class="user-info">
-            <span id="current-user"></span>
-          </div>
-          <button class="btn-logout" onclick="logout()">Đăng xuất</button>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <section class="section active">
+                <div class="section-header" id="section-title">
+                    <h2>Đang tải...</h2>
+                    <p>Vui lòng đợi trong giây lát</p>
+                </div>
+                
+                <div id="profile-info" class="profile-info-card" style="display: none;">
+                    <!-- Profile content will be loaded here -->
+                </div>
+                
+                <div id="admin-user-table" style="display: none;">
+                    <!-- Admin user management will be loaded here -->
+                </div>
+            </section>
         </div>
-      </div>
+    </main>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="modal-title" id="modal-title">Xác nhận hành động</h3>
+            <p class="modal-message" id="modal-message">Bạn có chắc chắn muốn thực hiện hành động này?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeConfirmModal()">
+                    <i class="fas fa-times"></i>
+                    Hủy
+                </button>
+                <button class="btn btn-danger" id="confirm-btn" onclick="confirmAction()">
+                    <i class="fas fa-check"></i>
+                    Xác nhận
+                </button>
+            </div>
+        </div>
     </div>
-  </header>
-  <main class="main">
-    <div class="container">
-      <section class="section active">
-        <div class="section-header" id="section-title"></div>
-        <div id="profile-info" class="profile-info-card"></div>
-        <div id="admin-user-table"></div>
-      </section>
-    </div>
-  </main>
-  <script src="app.js"></script>
-  <script>
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    if (!token) window.location.href = 'login.html';
-    document.getElementById('current-user').innerText = role ? role : '';
-    // Đổi tên nav-link theo quyền
-    if (role !== 'admin') document.getElementById('user-nav-link').innerText = 'Thông tin cá nhân';
-    // Sau khi xác định role và token:
-    if (role === 'patient') {
-      // Ẩn mục Hàng đợi trên nav
-      const nav = document.querySelector('.nav');
-      if (nav) {
-        const queueLink = nav.querySelector('a[href="queue.html"]');
-        if (queueLink) queueLink.style.display = 'none';
-      }
-    }
-    // Nếu là admin: hiển thị bảng user, cho phép đổi quyền, xóa tài khoản
-    if (role === 'admin') {
-      document.getElementById('section-title').innerHTML = `<h2>Quản lý người dùng</h2><p>Xem, chỉnh sửa quyền, xóa tài khoản</p>`;
-      fetch('http://localhost:8000/users', { headers: { 'Authorization': 'Bearer ' + token } })
-        .then(res => res.json())
-        .then(users => {
-         let html = `<div class='user-table-wrap'><table class='user-table'>
-           <thead><tr>
-             <th>Họ tên</th><th>Tên đăng nhập</th><th>Email</th><th>Điện thoại</th><th>Ngày sinh</th><th>Giới tính</th><th>Địa chỉ</th><th>Vai trò</th><th>Hành động</th>
-           </tr></thead><tbody>`;
-         users.forEach(u => {
-           html += `<tr>
-             <td>${u.FullName||''}</td>
-             <td>${u.Username||''}</td>
-             <td>${u.Email||''}</td>
-             <td>${u.Phone||''}</td>
-             <td>${u.DateOfBirth ? new Date(u.DateOfBirth).toLocaleDateString() : ''}</td>
-             <td>${u.Gender||''}</td>
-             <td>${u.Address||''}</td>
-             <td>
-               <select data-uid="${u.UserId}" class="role-select">
-                 <option value="admin" ${u.Role==='admin'?'selected':''}>admin</option>
-                 <option value="doctor" ${u.Role==='doctor'?'selected':''}>doctor</option>
-                 <option value="receptionist" ${u.Role==='receptionist'?'selected':''}>receptionist</option>
-                 <option value="patient" ${u.Role==='patient'?'selected':''}>patient</option>
-               </select>
-             </td>
-             <td style='display:flex;gap:0.5rem;'>
-               <button class='btn btn-primary' onclick='saveRole(${u.UserId})'>Lưu</button>
-               <button class='btn btn-danger' onclick='deleteUser(${u.UserId},"${u.FullName||u.Username}")'>Xóa</button>
-             </td>
-           </tr>`;
-         });
-         html += `</tbody></table></div>`;
-         document.getElementById('admin-user-table').innerHTML = html;
-        });
-      window.saveRole = function(uid) {
-        const sel = document.querySelector(`select[data-uid="${uid}"]`);
-        const newRole = sel.value;
-        fetch(`http://localhost:8000/users/${uid}/role`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ role: newRole })
-        }).then(res => {
-          if (res.ok) alert('Cập nhật vai trò thành công!');
-          else alert('Lỗi cập nhật vai trò!');
-        });
-      }
-     window.deleteUser = function(uid, name) {
-       if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản "${name}"?`)) return;
-       fetch(`http://localhost:8000/users/${uid}`, {
-         method: 'DELETE',
-         headers: { 'Authorization': 'Bearer ' + token }
-       }).then(res => {
-         if (res.ok) { alert('Đã xóa tài khoản!'); location.reload(); }
-         else alert('Lỗi khi xóa tài khoản!');
-       });
-     }
-      document.getElementById('profile-info').style.display = 'none';
-    } else {
-      document.getElementById('section-title').innerHTML = `<h2 style="text-align:center;font-size:2rem;color:#1976d2;margin-bottom:0.5rem;">Thông tin cá nhân</h2><p style="text-align:center;color:#888;">Xem và cập nhật thông tin tài khoản của bạn</p>`;
-      let currentUser = null;
-      function renderProfile(user) {
-        currentUser = user;
-        document.getElementById('profile-info').innerHTML = `
-          <div id="profile-view" style="width:100%;max-width:400px;background:#fff;border-radius:12px;box-shadow:0 2px 12px #1976d220;padding:2rem 1.5rem 1.5rem 1.5rem;margin:0 auto;">
-            <div class="profile-row"><b>Họ tên:</b> ${user.FullName || ''}</div>
-            <div class="profile-row"><b>Tên đăng nhập:</b> ${user.Username || ''}</div>
-            <div class="profile-row"><b>Email:</b> ${user.Email || ''}</div>
-            <div class="profile-row"><b>Điện thoại:</b> ${user.Phone || ''}</div>
-            <div class="profile-row"><b>Ngày sinh:</b> ${user.DateOfBirth ? new Date(user.DateOfBirth).toLocaleDateString() : ''}</div>
-            <div class="profile-row"><b>Giới tính:</b> ${user.Gender || ''}</div>
-            <div class="profile-row"><b>Địa chỉ:</b> ${user.Address || ''}</div>
-            <div class="profile-row"><b>Vai trò:</b> ${user.Role || ''}</div>
-            <div style="text-align:center;margin-top:1.2rem;">
-              <button class="btn btn-primary" style="min-width:120px;" onclick="showEditProfile()">Chỉnh sửa</button>
-            </div>
-          </div>
-        `;
-      }
-      window.showEditProfile = function() {
-        const user = currentUser;
-        document.getElementById('profile-info').innerHTML = `
-          <form id="edit-profile-form" style="width:100%;max-width:440px;background:#fff;border-radius:16px;box-shadow:0 4px 24px #1976d220;padding:2.2rem 2rem 1.7rem 2rem;margin:0 auto;display:flex;flex-direction:column;align-items:center;">
-            <h3 style='color:#1976d2;font-size:1.35rem;margin-bottom:1.5rem;text-align:center;'>Chỉnh sửa thông tin cá nhân</h3>
-            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
-              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Họ tên</label>
-              <input type="text" name="FullName" value="${user.FullName||''}" required style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
-            </div>
-            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
-              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Email</label>
-              <input type="email" name="Email" value="${user.Email||''}" style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
-            </div>
-            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
-              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Điện thoại</label>
-              <input type="text" name="Phone" value="${user.Phone||''}" style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
-            </div>
-            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
-              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Ngày sinh</label>
-              <input type="date" name="DateOfBirth" value="${user.DateOfBirth ? new Date(user.DateOfBirth).toISOString().slice(0,10) : ''}" style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
-            </div>
-            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
-              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Giới tính</label>
-              <select name="Gender" style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
-                <option value="">--</option>
-                <option value="nam" ${user.Gender==='nam'?'selected':''}>Nam</option>
-                <option value="nữ" ${user.Gender==='nữ'?'selected':''}>Nữ</option>
-              </select>
-            </div>
-            <div class="profile-row" style="width:100%;margin-bottom:1.1rem;">
-              <label style="font-weight:500;display:block;margin-bottom:0.3rem;">Địa chỉ</label>
-              <input type="text" name="Address" value="${user.Address||''}" style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:1.5px solid #cfd8dc;font-size:1.08rem;">
-            </div>
-            <div style="text-align:center;margin-top:1.5rem;width:100%;display:flex;justify-content:center;gap:1.2rem;">
-              <button type="submit" class="btn btn-primary" style="min-width:120px;font-size:1.08rem;padding:0.7rem 0;">Lưu</button>
-              <button type="button" class="btn btn-danger" style="min-width:90px;font-size:1.08rem;padding:0.7rem 0;" onclick="renderProfile(currentUser)">Hủy</button>
-            </div>
-          </form>
-        `;
-        document.querySelectorAll('#edit-profile-form input, #edit-profile-form select').forEach(el => {
-          el.onfocus = function() { this.style.border = '1.5px solid #1976d2'; };
-          el.onblur = function() { this.style.border = '1.5px solid #cfd8dc'; };
-        });
-        document.getElementById('edit-profile-form').onsubmit = async function(e) {
-          e.preventDefault();
-          const form = e.target;
-          const data = {
-            FullName: form.FullName.value,
-            Email: form.Email.value,
-            Phone: form.Phone.value,
-            DateOfBirth: form.DateOfBirth.value ? new Date(form.DateOfBirth.value).toISOString() : null,
-            Gender: form.Gender.value,
-            Address: form.Address.value
-          };
-          const res = await fetch('http://localhost:8000/users/me', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify(data)
-          });
-          if (res.ok) {
-            const updated = await res.json();
-            renderProfile(updated);
-            alert('Cập nhật thành công!');
-          } else {
-            alert('Lỗi khi cập nhật thông tin!');
-          }
+
+    <script src="app.js"></script>
+    <script>
+        // Enhanced user management with animations and better UX
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        
+        if (!token) window.location.href = 'login.html';
+        
+        document.getElementById('current-user').innerText = role ? role.charAt(0).toUpperCase() + role.slice(1) : '';
+
+        // Update nav link based on role
+        if (role !== 'admin') {
+            const userNav = document.getElementById('user-nav-link');
+            if (userNav) {
+                userNav.innerHTML = '<i class="fas fa-user"></i> Thông tin cá nhân';
+            }
+        }
+
+        // Hide queue navigation for patients
+        if (role === 'patient') {
+            const nav = document.querySelector('.nav');
+            if (nav) {
+                const queueLink = nav.querySelector('a[href="queue.html"]');
+                if (queueLink) queueLink.style.display = 'none';
+            }
+        }
+
+        let currentUser = null;
+        let pendingAction = null;
+
+        // Enhanced toast notification
+        function showToast(message, type = 'info', duration = 3000) {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fas fa-check-circle',
+                error: 'fas fa-times-circle',
+                warning: 'fas fa-exclamation-triangle',
+                info: 'fas fa-info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="${icons[type] || icons.info}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // Confirmation modal functions
+        function showConfirmModal(title, message, callback) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            pendingAction = callback;
+            document.getElementById('confirm-modal').classList.add('active');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.remove('active');
+            pendingAction = null;
+        }
+
+        function confirmAction() {
+            if (pendingAction) {
+                pendingAction();
+                pendingAction = null;
+            }
+            closeConfirmModal();
+        }
+
+        // Enhanced profile rendering
+        function renderProfile(user) {
+            currentUser = user;
+            
+            const getInitials = (name) => {
+                if (!name) return '?';
+                return name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
+            };
+
+            const formatDate = (dateString) => {
+                if (!dateString) return 'Chưa cập nhật';
+                return new Date(dateString).toLocaleDateString('vi-VN');
+            };
+
+            const profileInfo = document.getElementById('profile-info');
+            let profileHtml = `
+                <div class="profile-view-card" id="profile-view">
+                    <div class="profile-avatar">
+                        ${getInitials(user.FullName)}
+                    </div>
+                    
+                    <div class="profile-name">${user.FullName || 'Chưa cập nhật'}</div>
+                    <div class="profile-role">${user.Role || 'Người dùng'}</div>
+                    
+                    <div class="profile-info-grid">
+                        <div class="profile-row">
+                            <div class="profile-row-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="profile-row-content">
+                                <div class="profile-row-label">Tên đăng nhập</div>
+                                <div class="profile-row-value">${user.Username || 'Chưa cập nhật'}</div>
+                            </div>
+                        </div>
+
+                        <div class="profile-row">
+                            <div class="profile-row-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="profile-row-content">
+                                <div class="profile-row-label">Email</div>
+                                <div class="profile-row-value">${user.Email || 'Chưa cập nhật'}</div>
+                            </div>
+                        </div>
+
+                        <div class="profile-row">
+                            <div class="profile-row-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="profile-row-content">
+                                <div class="profile-row-label">Số điện thoại</div>
+                                <div class="profile-row-value">${user.Phone || 'Chưa cập nhật'}</div>
+                            </div>
+                        </div>
+
+                        <div class="profile-row">
+                            <div class="profile-row-icon">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="profile-row-content">
+                                <div class="profile-row-label">Ngày sinh</div>
+                                <div class="profile-row-value">${formatDate(user.DateOfBirth)}</div>
+                            </div>
+                        </div>
+
+                        <div class="profile-row">
+                            <div class="profile-row-icon">
+                                <i class="fas fa-venus-mars"></i>
+                            </div>
+                            <div class="profile-row-content">
+                                <div class="profile-row-label">Giới tính</div>
+                                <div class="profile-row-value">${user.Gender || 'Chưa cập nhật'}</div>
+                            </div>
+                        </div>
+
+                        <div class="profile-row">
+                            <div class="profile-row-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="profile-row-content">
+                                <div class="profile-row-label">Địa chỉ</div>
+                                <div class="profile-row-value">${user.Address || 'Chưa cập nhật'}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-primary" onclick="showEditProfile()">
+                            <i class="fas fa-edit"></i>
+                            Chỉnh sửa thông tin
+                        </button>
+                    </div>
+                </div>
+            `;
+            let deptHtml = '';
+            if (user.Role === 'doctor') {
+                deptHtml = `
+                    <div class="profile-view-card" id="doctor-departments-card">
+                        <h3 style="text-align:center;margin-bottom:1rem;">Khoa phụ trách</h3>
+                        <div id="doctor-department-single">
+                            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                        </div>
+                        <div class="form-actions" style="justify-content:center;">
+                            <button class="btn btn-primary" id="btn-edit-department"><i class="fas fa-edit"></i> Chỉnh sửa khoa</button>
+                        </div>
+                    </div>
+                `;
+            }
+            profileInfo.innerHTML = `<div class="profile-two-cols">${profileHtml}${deptHtml}</div>`;
+            if (user.Role === 'doctor') {
+                setTimeout(() => loadDoctorDepartmentSingle(user.UserId), 0);
+            }
+        }
+
+        // Enhanced edit profile form
+        function showEditProfile() {
+            const user = currentUser;
+            const profileInfo = document.getElementById('profile-info');
+            
+            profileInfo.innerHTML = `
+                <form id="edit-profile-form" class="edit-profile-form">
+                    <h3 class="edit-form-title">
+                        <i class="fas fa-edit"></i>
+                        Chỉnh sửa thông tin cá nhân
+                    </h3>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-user"></i>
+                                Họ và tên <span style="color: var(--error);">*</span>
+                            </label>
+                            <input type="text" name="FullName" class="form-input" value="${user.FullName || ''}" required placeholder="Nhập họ và tên đầy đủ">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-envelope"></i>
+                                Email
+                            </label>
+                            <input type="email" name="Email" class="form-input" value="${user.Email || ''}" placeholder="example@email.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-phone"></i>
+                                Số điện thoại
+                            </label>
+                            <input type="tel" name="Phone" class="form-input" value="${user.Phone || ''}" placeholder="0901234567">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-calendar"></i>
+                                Ngày sinh
+                            </label>
+                            <input type="date" name="DateOfBirth" class="form-input" value="${user.DateOfBirth ? new Date(user.DateOfBirth).toISOString().slice(0, 10) : ''}">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-venus-mars"></i>
+                                Giới tính
+                            </label>
+                            <select name="Gender" class="form-select">
+                                <option value="">-- Chọn giới tính --</option>
+                                <option value="Nam" ${user.Gender === 'Nam' ? 'selected' : ''}>Nam</option>
+                                <option value="Nữ" ${user.Gender === 'Nữ' ? 'selected' : ''}>Nữ</option>
+                                <option value="Khác" ${user.Gender === 'Khác' ? 'selected' : ''}>Khác</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Địa chỉ
+                            </label>
+                            <input type="text" name="Address" class="form-input" value="${user.Address || ''}" placeholder="Nhập địa chỉ chi tiết">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="renderProfile(currentUser)">
+                            <i class="fas fa-times"></i>
+                            Hủy bỏ
+                        </button>
+                        <button type="submit" class="btn btn-success" id="save-profile-btn">
+                            <i class="fas fa-save"></i>
+                            Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            `;
+
+            // Add form validation and submission
+            const form = document.getElementById('edit-profile-form');
+            const inputs = form.querySelectorAll('.form-input, .form-select');
+            
+            // Add input validation
+            inputs.forEach(input => {
+                input.addEventListener('blur', validateField);
+                input.addEventListener('input', () => {
+                    if (input.classList.contains('invalid')) {
+                        validateField.call(input);
+                    }
+                });
+            });
+
+            // Form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const saveBtn = document.getElementById('save-profile-btn');
+                const originalBtnContent = saveBtn.innerHTML;
+                
+                // Validate all fields
+                let isValid = true;
+                inputs.forEach(input => {
+                    if (!validateField.call(input)) {
+                        isValid = false;
+                    }
+                });
+
+                if (!isValid) {
+                    showToast('Vui lòng kiểm tra lại thông tin!', 'error');
+                    return;
+                }
+
+                // Set loading state
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="loading-spinner"></span> Đang lưu...';
+                
+                const formData = new FormData(form);
+                const data = {
+                    FullName: formData.get('FullName'),
+                    Email: formData.get('Email'),
+                    Phone: formData.get('Phone'),
+                    DateOfBirth: formData.get('DateOfBirth') ? new Date(formData.get('DateOfBirth')).toISOString() : null,
+                    Gender: formData.get('Gender'),
+                    Address: formData.get('Address')
+                };
+
+                try {
+                    const response = await fetch('http://localhost:8000/users/me', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        const updatedUser = await response.json();
+                        renderProfile(updatedUser);
+                        showToast('Cập nhật thông tin thành công!', 'success');
+                    } else {
+                        const error = await response.json();
+                        showToast(error.detail || 'Lỗi khi cập nhật thông tin!', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error updating profile:', error);
+                    showToast('Lỗi kết nối máy chủ!', 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalBtnContent;
+                }
+            });
+        }
+
+        // Field validation function
+        function validateField() {
+            const value = this.value.trim();
+            const name = this.name;
+            let isValid = true;
+
+            // Remove previous validation classes
+            this.classList.remove('valid', 'invalid');
+
+            switch (name) {
+                case 'FullName':
+                    isValid = value.length >= 2;
+                    break;
+                case 'Email':
+                    if (value) {
+                        isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+                    }
+                    break;
+                case 'Phone':
+                    if (value) {
+                        isValid = /^[0-9]{10,11}$/.test(value);
+                    }
+                    break;
+            }
+
+            // Add validation class
+            if (this.hasAttribute('required') && !value) {
+                this.classList.add('invalid');
+                return false;
+            } else if (isValid) {
+                this.classList.add('valid');
+                return true;
+            } else {
+                this.classList.add('invalid');
+                return false;
+            }
+        }
+
+        // Enhanced admin user management
+        async function renderAdminUserTable() {
+            try {
+                const response = await fetch('http://localhost:8000/users', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const users = await response.json();
+                
+                const getInitials = (name) => {
+                    if (!name) return '?';
+                    return name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
+                };
+
+                const formatDate = (dateString) => {
+                    if (!dateString) return '-';
+                    return new Date(dateString).toLocaleDateString('vi-VN');
+                };
+
+                let tableHtml = `
+                    <div class="user-management-container">
+                        <div class="table-header">
+                            <div class="table-title">
+                                <i class="fas fa-users-cog"></i>
+                                Quản lý người dùng
+                            </div>
+                            <div class="table-stats">
+                                <i class="fas fa-users"></i>
+                                Tổng cộng: ${users.length} người dùng
+                            </div>
+                        </div>
+                        
+                        <div class="user-table-wrap">
+                            <table class="user-table">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-user"></i> Người dùng</th>
+                                        <th><i class="fas fa-envelope"></i> Email</th>
+                                        <th><i class="fas fa-phone"></i> Điện thoại</th>
+                                        <th><i class="fas fa-calendar"></i> Ngày sinh</th>
+                                        <th><i class="fas fa-venus-mars"></i> Giới tính</th>
+                                        <th><i class="fas fa-map-marker-alt"></i> Địa chỉ</th>
+                                        <th><i class="fas fa-user-tag"></i> Vai trò</th>
+                                        <th><i class="fas fa-building"></i> Khoa phụ trách</th>
+                                        <th><i class="fas fa-cogs"></i> Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+
+                users.forEach(user => {
+                    tableHtml += `
+                        <tr>
+                            <td>
+                                <div class="user-avatar-cell">
+                                    <div class="user-avatar">
+                                        ${getInitials(user.FullName)}
+                                    </div>
+                                    <div>
+                                        <div class="user-name">${user.FullName || 'Chưa cập nhật'}</div>
+                                        <div class="user-username">@${user.Username}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>${user.Email || '-'}</td>
+                            <td>${user.Phone || '-'}</td>
+                            <td>${formatDate(user.DateOfBirth)}</td>
+                            <td>${user.Gender || '-'}</td>
+                            <td>${user.Address || '-'}</td>
+                            <td>
+                                <select class="role-select" data-uid="${user.UserId}" onchange="updateUserRole(${user.UserId}, this.value)">
+                                    <option value="admin" ${user.Role === 'admin' ? 'selected' : ''}>Admin</option>
+                                    <option value="doctor" ${user.Role === 'doctor' ? 'selected' : ''}>Bác sĩ</option>
+                                    <option value="receptionist" ${user.Role === 'receptionist' ? 'selected' : ''}>Lễ tân</option>
+                                    <option value="patient" ${user.Role === 'patient' ? 'selected' : ''}>Bệnh nhân</option>
+                                </select>
+                            </td>
+                            <td>${user.Role === 'doctor' ? (user.DepartmentName || '-') : '-'}</td>
+                            <td>
+                                <div class="user-actions">
+                                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.UserId}, '${user.FullName || user.Username}')" title="Xóa người dùng">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tableHtml += '</tbody></table></div></div>';
+                
+                document.getElementById('admin-user-table').innerHTML = tableHtml;
+                
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showToast('Lỗi khi tải danh sách người dùng!', 'error');
+                
+                document.getElementById('admin-user-table').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Không thể tải dữ liệu</h3>
+                        <p>Vui lòng thử lại sau</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Update user role
+        window.updateUserRole = async function(userId, newRole) {
+            const originalSelect = document.querySelector(`select[data-uid="${userId}"]`);
+            const originalValue = originalSelect.value;
+            
+            try {
+                const response = await fetch(`http://localhost:8000/users/${userId}/role`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ role: newRole })
+                });
+
+                if (response.ok) {
+                    showToast('Cập nhật vai trò thành công!', 'success');
+                } else {
+                    originalSelect.value = originalValue;
+                    showToast('Lỗi khi cập nhật vai trò!', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating role:', error);
+                originalSelect.value = originalValue;
+                showToast('Lỗi kết nối máy chủ!', 'error');
+            }
         };
-      };
-      fetch('http://localhost:8000/users/me', { headers: { 'Authorization': 'Bearer ' + token } })
-        .then(res => res.json())
-        .then(user => { if (user) renderProfile(user); });
-      document.getElementById('admin-user-table').style.display = 'none';
-    }
-    function logout() {
-      localStorage.clear();
-      window.location.href = 'login.html';
-    }
-  </script>
-  <style>
-    .profile-info-card {
-      background: #f8fafc;
-      border-radius: 10px;
-      padding: 2rem 1.5rem;
-      box-shadow: 0 2px 8px rgba(25, 118, 210, 0.07);
-      max-width: 500px;
-      margin: 0 auto 2rem auto;
-      font-size: 1.1rem;
-    }
-    .profile-row { margin-bottom: 0.7rem; }
-    .user-table-wrap {
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 2px 16px #1976d220;
-      padding: 2rem 1rem 2rem 1rem;
-      margin: 2rem auto 0 auto;
-      max-width: 1100px;
-      overflow-x: auto;
-    }
-    .user-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 1.08rem;
-      background: #fff;
-    }
-    .user-table th, .user-table td {
-      padding: 0.7rem 0.6rem;
-      border-bottom: 1px solid #e3eaf6;
-      text-align: left;
-    }
-    .user-table th {
-      background: #f5f7fa;
-      color: #1976d2;
-      font-weight: 600;
-      font-size: 1.08rem;
-    }
-    .user-table tr:last-child td { border-bottom: none; }
-    .user-table select {
-      padding: 0.3rem 0.7rem;
-      border-radius: 6px;
-      border: 1px solid #cfd8dc;
-      font-size: 1rem;
-      background: #f8fafc;
-      transition: border 0.2s;
-    }
-    .user-table select:focus { border: 1.5px solid #1976d2; }
-    .btn.btn-primary {
-      background: #1976d2;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 0.45rem 1.1rem;
-      font-size: 1rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.15s;
-      box-shadow: 0 2px 8px #1976d220;
-    }
-    .btn.btn-primary:hover, .btn.btn-primary:focus {
-      background: #1565c0;
-      transform: translateY(-2px) scale(1.03);
-    }
-    .btn.btn-danger {
-      background: #e53935;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 0.45rem 1.1rem;
-      font-size: 1rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.15s;
-      box-shadow: 0 2px 8px #e5393520;
-    }
-    .btn.btn-danger:hover, .btn.btn-danger:focus {
-      background: #b71c1c;
-      transform: translateY(-2px) scale(1.03);
-    }
-  </style>
+
+        // Delete user with confirmation
+        window.deleteUser = function(userId, userName) {
+            showConfirmModal(
+                'Xóa người dùng',
+                `Bạn có chắc chắn muốn xóa tài khoản "${userName}"? Hành động này không thể hoàn tác.`,
+                async () => {
+                    try {
+                        const response = await fetch(`http://localhost:8000/users/${userId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+
+                        if (response.ok) {
+                            showToast('Đã xóa tài khoản thành công!', 'success');
+                            await renderAdminUserTable();
+                        } else {
+                            showToast('Lỗi khi xóa tài khoản!', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting user:', error);
+                        showToast('Lỗi kết nối máy chủ!', 'error');
+                    }
+                }
+            );
+        };
+
+        // Initialize page based on role
+        async function initializePage() {
+            if (role === 'admin') {
+                // Admin view - user management
+                document.getElementById('section-title').innerHTML = `
+                    <h2>Quản lý người dùng</h2>
+                    <p>Xem, chỉnh sửa quyền và quản lý tài khoản người dùng trong hệ thống</p>
+                `;
+                
+                document.getElementById('profile-info').style.display = 'none';
+                document.getElementById('admin-user-table').style.display = 'block';
+                
+                await renderAdminUserTable();
+                
+            } else {
+                // Personal profile view
+                document.getElementById('section-title').innerHTML = `
+                    <h2>Thông tin cá nhân</h2>
+                    <p>Xem và cập nhật thông tin tài khoản của bạn</p>
+                `;
+                
+                document.getElementById('admin-user-table').style.display = 'none';
+                document.getElementById('profile-info').style.display = 'block';
+                
+                try {
+                    const response = await fetch('http://localhost:8000/users/me', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    
+                    if (response.ok) {
+                        const user = await response.json();
+                        if (user) renderProfile(user);
+                    } else {
+                        showToast('Lỗi khi tải thông tin cá nhân!', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error loading profile:', error);
+                    showToast('Lỗi kết nối máy chủ!', 'error');
+                }
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.clear();
+            showToast('Đã đăng xuất thành công', 'info');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
+        }
+
+        // Make functions available globally
+        window.showEditProfile = showEditProfile;
+        window.renderProfile = renderProfile;
+        window.currentUser = currentUser;
+
+        // Initialize page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+        });
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                closeConfirmModal();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeConfirmModal();
+            }
+        });
+
+        // Thêm vào trong hàm renderProfile, sau phần profile-view-card:
+        // if (user.Role === 'doctor') {
+        //     profileInfo.innerHTML += `
+        //         <div class="profile-view-card" id="doctor-departments-card">
+        //             <h3 style="text-align:center;margin-bottom:1rem;">Khoa phụ trách</h3>
+        //             <div id="doctor-departments-table">
+        //                 <div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+        //             </div>
+        //             <div class="form-actions" style="justify-content:center;">
+        //                 <button class="btn btn-success" id="btn-add-department"><i class="fas fa-plus"></i> Thêm khoa</button>
+        //             </div>
+        //         </div>
+        //     `;
+        //     loadDoctorDepartments(user.UserId);
+        // }
+
+        // Thêm hàm loadDoctorDepartments
+        async function loadDoctorDepartmentSingle(doctorId) {
+            const div = document.getElementById('doctor-department-single');
+            div.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+            try {
+                const res = await fetch(`http://localhost:8000/doctor_departments?doctor_id=${doctorId}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) throw new Error('Lỗi khi tải khoa');
+                const data = await res.json();
+                if (!data.length) {
+                    div.innerHTML = '<div class="empty-state"><i class="fas fa-hospital"></i> Chưa có khoa nào</div>';
+                    return;
+                }
+                const dept = data[0].Department || {};
+                div.innerHTML = `
+                    <div class='profile-row'><div class='profile-row-icon'><i class='fas fa-building'></i></div><div class='profile-row-content'><div class='profile-row-label'>Tên khoa</div><div class='profile-row-value'>${dept.Name || '-'} (${dept.Type || '-'})</div></div></div>
+                    <div class='profile-row'><div class='profile-row-icon'><i class='fas fa-info-circle'></i></div><div class='profile-row-content'><div class='profile-row-label'>Mô tả</div><div class='profile-row-value'>${dept.Description || '-'}</div></div></div>
+                    <div class='profile-row'><div class='profile-row-icon'><i class='fas fa-map-marker-alt'></i></div><div class='profile-row-content'><div class='profile-row-label'>Vị trí</div><div class='profile-row-value'>${dept.Location || '-'}</div></div></div>
+                    <div class='profile-row'><div class='profile-row-icon'><i class='fas fa-layer-group'></i></div><div class='profile-row-content'><div class='profile-row-label'>Tầng</div><div class='profile-row-value'>${dept.Floor || '-'}</div></div></div>
+                    <div class='profile-row'><div class='profile-row-icon'><i class='fas fa-door-open'></i></div><div class='profile-row-content'><div class='profile-row-label'>Phòng</div><div class='profile-row-value'>${dept.RoomNumber || '-'}</div></div></div>
+                    <div class='profile-row'><div class='profile-row-icon'><i class='fas fa-toggle-on'></i></div><div class='profile-row-content'><div class='profile-row-label'>Trạng thái</div><div class='profile-row-value'>${dept.IsActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}</div></div></div>
+                `;
+            } catch (e) {
+                div.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i> Lỗi khi tải khoa</div>';
+            }
+        }
+
+        // Thêm hàm removeDoctorDepartment
+        window.removeDoctorDepartment = async function(id) {
+            if (!confirm('Bạn có chắc chắn muốn xóa khoa này khỏi danh sách phụ trách?')) return;
+            try {
+                const res = await fetch(`http://localhost:8000/doctor_departments/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    showToast('Đã xóa khoa khỏi danh sách phụ trách!', 'success');
+                    loadDoctorDepartmentSingle(currentUser.UserId);
+                } else {
+                    showToast('Lỗi khi xóa khoa!', 'error');
+                }
+            } catch (e) {
+                showToast('Lỗi kết nối máy chủ!', 'error');
+            }
+        }
+
+        // Thêm sự kiện cho nút thêm khoa
+        window.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'btn-edit-department') {
+                showEditDepartmentModal();
+            }
+        });
+
+        // Thêm modal chọn khoa và hàm showAddDepartmentModal
+        function showEditDepartmentModal() {
+            fetch('http://localhost:8000/departments', { headers: { 'Authorization': 'Bearer ' + token } })
+                .then(res => res.json())
+                .then(depts => {
+                    let html = `<div class='modal active' id='edit-dept-modal'><div class='modal-content'><div class='modal-header'><h3 class='modal-title'><i class='fas fa-edit'></i> Chỉnh sửa khoa phụ trách</h3><button class='modal-close' onclick='closeEditDeptModal()'><i class='fas fa-times'></i></button></div><div class='modal-body'><form id='edit-dept-form'><div class='form-group'><label class='form-label'>Chọn khoa</label><select id='select-edit-dept' class='form-select' required><option value=''>-- Chọn khoa --</option>`;
+                    depts.forEach(d => { html += `<option value='${d.DepartmentId}'>${d.Name} (${d.Type})</option>`; });
+                    html += `</select></div><div class='form-actions'><button type='button' class='btn btn-secondary' onclick='closeEditDeptModal()'><i class='fas fa-times'></i> Hủy</button><button type='submit' class='btn btn-primary'><i class='fas fa-check'></i> Lưu</button></div></form></div></div></div>`;
+                    document.body.insertAdjacentHTML('beforeend', html);
+                    document.getElementById('edit-dept-form').onsubmit = async function(ev) {
+                        ev.preventDefault();
+                        const deptId = document.getElementById('select-edit-dept').value;
+                        if (!deptId) return;
+                        try {
+                            const res = await fetch('http://localhost:8000/doctor_departments', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                body: JSON.stringify({ DoctorId: currentUser.UserId, DepartmentId: deptId, IsPrimary: true })
+                            });
+                            if (res.ok) {
+                                showToast('Đã cập nhật khoa phụ trách!', 'success');
+                                closeEditDeptModal();
+                                loadDoctorDepartmentSingle(currentUser.UserId);
+                            } else {
+                                showToast('Lỗi khi cập nhật khoa!', 'error');
+                            }
+                        } catch (e) {
+                            showToast('Lỗi kết nối máy chủ!', 'error');
+                        }
+                    };
+                });
+        }
+        window.closeEditDeptModal = function() {
+            const modal = document.getElementById('edit-dept-modal');
+            if (modal) modal.remove();
+        };
+    </script>
 </body>
-</html> 
+</html>

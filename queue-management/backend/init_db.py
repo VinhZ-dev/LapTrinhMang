@@ -1,5 +1,5 @@
 import database
-import models
+import hospital_models as models
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from datetime import datetime

@@ -23,7 +23,7 @@ origins = [
 ]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # hoặc ['http://127.0.0.1:5500'] nếu muốn chặt hơn
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

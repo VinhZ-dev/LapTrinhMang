@@ -94,19 +94,13 @@
                 <span id="current-serving" class="highlight">--</span>
             </div>
             <div class="waiting-list">
-                <h2>Danh sách chờ</h2>
+                <h2>Danh sách chờ (Hàng đợi thực tế)</h2>
                 <ul id="waiting-list"></ul>
             </div>
             <div class="estimate">
                 <span>Thời gian chờ dự kiến:</span>
                 <span id="estimate-time">-- phút</span>
             </div>
-        </div>
-        <div class="chart-section">
-          <h2 style="color:#1976d2;text-align:center;margin:2rem 0 1rem 0;font-size:1.25rem;">Biểu đồ số lượng người chờ theo khoa</h2>
-          <div style="background:#fff;border-radius:14px;box-shadow:0 2px 16px #1976d220;padding:1.5rem 1rem 1.5rem 1rem;max-width:100%;margin:0 auto;">
-            <canvas id="departmentChart" style="width:100%;max-width:700px;height:340px;display:block;margin:0 auto;"></canvas>
-          </div>
         </div>
     </div>
     <div class="loading-overlay" id="loading-overlay"><div class="loading-spinner"><span>Đang tải...</span></div></div>
@@ -178,6 +172,33 @@
         const userNav = document.getElementById('user-nav-link');
         if (userNav) userNav.innerText = 'Thông tin cá nhân';
       }
+    async function fetchQueueEntries() {
+        try {
+            const res = await fetch('http://localhost:8000/queue_entries');
+            if (!res.ok) throw new Error('Không thể lấy dữ liệu hàng đợi');
+            const data = await res.json();
+            renderQueueEntries(data);
+        } catch (err) {
+            document.getElementById('waiting-list').innerHTML = '<li>Lỗi tải dữ liệu hàng đợi</li>';
+        }
+    }
+    function renderQueueEntries(data) {
+        const waitingList = document.getElementById('waiting-list');
+        waitingList.innerHTML = '';
+        if (!data || data.length === 0) {
+            waitingList.innerHTML = '<li>Không có ai trong hàng đợi</li>';
+            return;
+        }
+        data.filter(e => e.Status === 'waiting').forEach(entry => {
+            const li = document.createElement('li');
+            li.textContent = `Số ${entry.Position} (UserId: ${entry.UserId})`;
+            waitingList.appendChild(li);
+        });
+        const current = data.find(e => e.Status === 'serving');
+        document.getElementById('current-serving').textContent = current ? `Số ${current.Position}` : '--';
+        document.getElementById('estimate-time').textContent = `${data.filter(e => e.Status === 'waiting').length * 7} phút`;
+    }
+    document.addEventListener('DOMContentLoaded', fetchQueueEntries);
     </script>
 </body>
 </html>

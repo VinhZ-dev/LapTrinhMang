@@ -7,4 +7,13 @@ SQLALCHEMY_DATABASE_URL = "mssql+pyodbc://@HP\\KANSQL/QueueManagement?driver=ODB
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base() 
+Base = declarative_base()
+
+def drop_all_tables():
+    from hospital_models import Base
+    print("Dropping all tables...")
+    Base.metadata.drop_all(bind=engine)
+    print("All tables dropped.")
+
+if __name__ == "__main__":
+    drop_all_tables() 
