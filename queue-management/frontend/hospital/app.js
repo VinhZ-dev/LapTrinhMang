@@ -74,9 +74,9 @@ function showLoading(show) {
 
 // === Chatbot Hugging Face cho bệnh viện ===
 (function() {
-  const HF_API_TOKEN = 'REMOVED';
-const HF_MODEL = 'bigscience/bloom';
-const HF_ENDPOINT = `https://api-inference.huggingface.co/models/${HF_MODEL}`;
+  // const HF_API_TOKEN = 'REMOVED'; // ĐÃ XÓA TOKEN
+  const HF_MODEL = 'bigscience/bloom';
+  const HF_ENDPOINT = `https://api-inference.huggingface.co/models/${HF_MODEL}`;
 // Giữ lại toàn bộ phần code chatbot như trước!
 
 
