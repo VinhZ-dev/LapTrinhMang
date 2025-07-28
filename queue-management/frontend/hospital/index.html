@@ -795,9 +795,13 @@
             </div>
             
                 <nav class="nav">
-                    <a href="index.html" class="nav-link active">
+                    <a href="index.html" class="nav-link active" id="nav-overview">
                         <i class="fas fa-chart-line"></i>
                         Tổng quan
+                    </a>
+                    <a href="#" class="nav-link" id="nav-notifications">
+                        <i class="fas fa-bell"></i>
+                        Thông báo
                     </a>
                     <a href="queue.html" class="nav-link">
                         <i class="fas fa-users"></i>
@@ -832,7 +836,7 @@
 
     <main class="main">
         <div class="container">
-            <section class="section active">
+            <section class="section active" id="section-overview">
                 <div class="section-header">
                     <h2>Tổng quan hệ thống</h2>
                     <p>Thống kê tổng quan về hoạt động của bệnh viện trong thời gian thực</p>
@@ -894,9 +898,55 @@
                     <canvas id="statsChart"></canvas>
                 </div>
             </section>
+            <section class="section" id="section-notifications" style="display:none">
+                <div class="section-header">
+                    <h2>Thông báo của bạn</h2>
+                    <p>Những thông báo quan trọng về lượt khám của bạn sẽ hiển thị tại đây.</p>
+                </div>
+                <div id="notifications-list">
+                    <div class="empty-state">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>Không có thông báo nào.</p>
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
 
+    <!-- Footer chuyên nghiệp -->
+    <footer id="main-footer" style="display:none;background:linear-gradient(90deg,#1e293b 60%,#2563eb 100%);color:#fff;padding:32px 0 16px 0;margin-top:48px;">
+      <div style="max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:32px 16px;">
+        <div style="flex:1 1 250px;min-width:220px;">
+          <div style="font-size:1.5rem;font-weight:700;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+            <i class="fas fa-hospital-alt" style="font-size:1.7rem;color:#3b82f6;"></i> Bệnh Viện Đa Khoa
+          </div>
+          <div style="font-size:1.05rem;opacity:0.85;">Nâng tầm chăm sóc sức khỏe - Công nghệ hiện đại, phục vụ tận tâm.</div>
+        </div>
+        <div style="flex:1 1 180px;min-width:180px;">
+          <div style="font-weight:600;margin-bottom:8px;">Liên hệ</div>
+          <div style="margin-bottom:6px;"><i class="fas fa-map-marker-alt" style="width:20px;"></i> 123 Đường Sức Khỏe, Quận 1, TP.HCM</div>
+          <div style="margin-bottom:6px;"><i class="fas fa-phone-alt" style="width:20px;"></i> Hotline: <a href="tel:18001234" style="color:#fff;text-decoration:underline;">1800 1234</a></div>
+          <div style="margin-bottom:6px;"><i class="fas fa-envelope" style="width:20px;"></i> Email: <a href="mailto:info@benhvien.com" style="color:#fff;text-decoration:underline;">info@benhvien.com</a></div>
+        </div>
+        <div style="flex:1 1 180px;min-width:180px;">
+          <div style="font-weight:600;margin-bottom:8px;">Kết nối</div>
+          <div style="display:flex;gap:12px;align-items:center;">
+            <a href="#" title="Facebook" style="color:#3b82f6;font-size:1.3rem;"><i class="fab fa-facebook-square"></i></a>
+            <a href="#" title="Zalo" style="color:#2563eb;font-size:1.3rem;"><i class="fas fa-comment-dots"></i></a>
+            <a href="#" title="Youtube" style="color:#ef4444;font-size:1.3rem;"><i class="fab fa-youtube"></i></a>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:32px;font-size:0.98rem;opacity:0.8;">
+        <i class="far fa-copyright"></i> 2024 Bệnh Viện Đa Khoa. All rights reserved.
+      </div>
+    </footer>
+    <script>
+      // Hiển thị footer khi đã đăng nhập
+      if (localStorage.getItem('token')) {
+        document.getElementById('main-footer').style.display = 'block';
+      }
+    </script>
     <script src="app.js"></script>
     <script>
         const token = localStorage.getItem('token');
@@ -996,14 +1046,14 @@
             let hasData = false;
             
             data.forEach(q => {
-                // Current serving (luôn là #1)
+                // Current serving
                 if (q.current_serving) {
                     hasData = true;
                     table += `
                         <tr class="current-serving" style="animation: fadeInUp 0.5s ease-out both;">
                             <td><strong>${q.department_name}</strong></td>
                             <td>${q.current_serving.patient_name}</td>
-                            <td><span class="badge">#1</span></td>
+                            <td><span class="badge">#${q.current_serving.position}</span></td>
                             <td><span class="status-cell in_progress">Đang khám</span></td>
                             <td>0 phút</td>
                             ${role !== 'patient' ? `
@@ -1016,16 +1066,16 @@
                         </tr>
                     `;
                 }
-                // Waiting queue (bắt đầu từ #2)
+                // Waiting queue
                 q.waiting_queue.forEach((w, idx) => {
                     hasData = true;
                     table += `
                         <tr style="animation: fadeInUp 0.5s ease-out ${idx * 0.1}s both;">
                             <td><strong>${q.department_name}</strong></td>
                             <td>${w.patient_name}</td>
-                            <td><span class="badge">#${idx + 2}</span></td>
+                            <td><span class="badge">#${w.position}</span></td>
                             <td><span class="status-cell waiting">Đang chờ</span></td>
-                            <td>${(idx+1)*5} phút</td>
+                            <td>${w.position * 5} phút</td>
                             ${role !== 'patient' ? `
                                 <td>
                                     ${idx === 0 && !q.current_serving ? 
@@ -1440,5 +1490,59 @@
 }
 
     </style>
+    <script>
+// Ẩn/hiện mục Thông báo trên menu theo vai trò
+window.addEventListener('DOMContentLoaded', function() {
+  var role = localStorage.getItem('role');
+  var navNotify = document.getElementById('nav-notifications');
+  if (navNotify) {
+    if (role !== 'patient') {
+      navNotify.style.display = 'none';
+    } else {
+      navNotify.style.display = '';
+    }
+  }
+});
+    </script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const navOverview = document.getElementById('nav-overview');
+  const navNotifications = document.getElementById('nav-notifications');
+  const sectionOverview = document.getElementById('section-overview');
+  const sectionNotifications = document.getElementById('section-notifications');
+  if (navOverview && navNotifications && sectionOverview && sectionNotifications) {
+    function showTab(tab) {
+      if (tab === 'notifications') {
+        navOverview.classList.remove('active');
+        navNotifications.classList.add('active');
+        sectionOverview.style.display = 'none';
+        sectionNotifications.style.display = '';
+        renderNotifications();
+      } else {
+        navOverview.classList.add('active');
+        navNotifications.classList.remove('active');
+        sectionOverview.style.display = '';
+        sectionNotifications.style.display = 'none';
+      }
+    }
+    // Nếu có hash #notifications thì mở tab Thông báo
+    if (window.location.hash === '#notifications') {
+      showTab('notifications');
+    } else {
+      showTab('overview');
+    }
+    navOverview.addEventListener('click', function(e) {
+      e.preventDefault();
+      showTab('overview');
+      history.replaceState(null, '', 'index.html');
+    });
+    navNotifications.addEventListener('click', function(e) {
+      e.preventDefault();
+      showTab('notifications');
+      history.replaceState(null, '', 'index.html#notifications');
+    });
+  }
+});
+    </script>
 </body>
 </html>

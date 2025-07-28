@@ -990,6 +990,40 @@
         </div>
     </main>
 
+    <!-- Footer chuyên nghiệp -->
+    <footer id="main-footer" style="display:none;background:linear-gradient(90deg,#1e293b 60%,#2563eb 100%);color:#fff;padding:32px 0 16px 0;margin-top:48px;">
+      <div style="max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:32px 16px;">
+        <div style="flex:1 1 250px;min-width:220px;">
+          <div style="font-size:1.5rem;font-weight:700;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+            <i class="fas fa-hospital-alt" style="font-size:1.7rem;color:#3b82f6;"></i> Bệnh Viện Đa Khoa
+          </div>
+          <div style="font-size:1.05rem;opacity:0.85;">Nâng tầm chăm sóc sức khỏe - Công nghệ hiện đại, phục vụ tận tâm.</div>
+        </div>
+        <div style="flex:1 1 180px;min-width:180px;">
+          <div style="font-weight:600;margin-bottom:8px;">Liên hệ</div>
+          <div style="margin-bottom:6px;"><i class="fas fa-map-marker-alt" style="width:20px;"></i> 123 Đường Sức Khỏe, Quận 1, TP.HCM</div>
+          <div style="margin-bottom:6px;"><i class="fas fa-phone-alt" style="width:20px;"></i> Hotline: <a href="tel:18001234" style="color:#fff;text-decoration:underline;">1800 1234</a></div>
+          <div style="margin-bottom:6px;"><i class="fas fa-envelope" style="width:20px;"></i> Email: <a href="mailto:info@benhvien.com" style="color:#fff;text-decoration:underline;">info@benhvien.com</a></div>
+        </div>
+        <div style="flex:1 1 180px;min-width:180px;">
+          <div style="font-weight:600;margin-bottom:8px;">Kết nối</div>
+          <div style="display:flex;gap:12px;align-items:center;">
+            <a href="#" title="Facebook" style="color:#3b82f6;font-size:1.3rem;"><i class="fab fa-facebook-square"></i></a>
+            <a href="#" title="Zalo" style="color:#2563eb;font-size:1.3rem;"><i class="fas fa-comment-dots"></i></a>
+            <a href="#" title="Youtube" style="color:#ef4444;font-size:1.3rem;"><i class="fab fa-youtube"></i></a>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:32px;font-size:0.98rem;opacity:0.8;">
+        <i class="far fa-copyright"></i> 2024 Bệnh Viện Đa Khoa. All rights reserved.
+      </div>
+    </footer>
+    <script>
+      // Hiển thị footer khi đã đăng nhập
+      if (localStorage.getItem('token')) {
+        document.getElementById('main-footer').style.display = 'block';
+      }
+    </script>
     <script src="app.js"></script>
     <script>
         // Authentication and role management

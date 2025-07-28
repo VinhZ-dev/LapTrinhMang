@@ -752,386 +752,419 @@
         </div>
     </div>
 
+    <!-- Footer chuyên nghiệp -->
+    <footer id="main-footer" style="display:none;background:linear-gradient(90deg,#1e293b 60%,#2563eb 100%);color:#fff;padding:32px 0 16px 0;margin-top:48px;">
+      <div style="max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:32px 16px;">
+        <div style="flex:1 1 250px;min-width:220px;">
+          <div style="font-size:1.5rem;font-weight:700;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+            <i class="fas fa-hospital-alt" style="font-size:1.7rem;color:#3b82f6;"></i> Bệnh Viện Đa Khoa
+          </div>
+          <div style="font-size:1.05rem;opacity:0.85;">Nâng tầm chăm sóc sức khỏe - Công nghệ hiện đại, phục vụ tận tâm.</div>
+        </div>
+        <div style="flex:1 1 180px;min-width:180px;">
+          <div style="font-weight:600;margin-bottom:8px;">Liên hệ</div>
+          <div style="margin-bottom:6px;"><i class="fas fa-map-marker-alt" style="width:20px;"></i> 123 Đường Sức Khỏe, Quận 1, TP.HCM</div>
+          <div style="margin-bottom:6px;"><i class="fas fa-phone-alt" style="width:20px;"></i> Hotline: <a href="tel:18001234" style="color:#fff;text-decoration:underline;">1800 1234</a></div>
+          <div style="margin-bottom:6px;"><i class="fas fa-envelope" style="width:20px;"></i> Email: <a href="mailto:info@benhvien.com" style="color:#fff;text-decoration:underline;">info@benhvien.com</a></div>
+        </div>
+        <div style="flex:1 1 180px;min-width:180px;">
+          <div style="font-weight:600;margin-bottom:8px;">Kết nối</div>
+          <div style="display:flex;gap:12px;align-items:center;">
+            <a href="#" title="Facebook" style="color:#3b82f6;font-size:1.3rem;"><i class="fab fa-facebook-square"></i></a>
+            <a href="#" title="Zalo" style="color:#2563eb;font-size:1.3rem;"><i class="fas fa-comment-dots"></i></a>
+            <a href="#" title="Youtube" style="color:#ef4444;font-size:1.3rem;"><i class="fab fa-youtube"></i></a>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:32px;font-size:0.98rem;opacity:0.8;">
+        <i class="far fa-copyright"></i> 2024 Bệnh Viện Đa Khoa. All rights reserved.
+      </div>
+    </footer>
     <script>
-        // Enhanced register functionality with animations and validation
-        const registerForm = document.getElementById('register-form');
-        const registerButton = document.getElementById('registerButton');
-        const buttonSpinner = document.getElementById('buttonSpinner');
-        const buttonText = document.getElementById('buttonText');
-        const errorMessage = document.getElementById('register-error');
-        const errorText = document.getElementById('error-text');
-        const successMessage = document.getElementById('register-success');
-        const successText = document.getElementById('success-text');
-        const registerContainer = document.getElementById('registerContainer');
+      // Enhanced register functionality with animations and validation
+      const registerForm = document.getElementById('register-form');
+      const registerButton = document.getElementById('registerButton');
+      const buttonSpinner = document.getElementById('buttonSpinner');
+      const buttonText = document.getElementById('buttonText');
+      const errorMessage = document.getElementById('register-error');
+      const errorText = document.getElementById('error-text');
+      const successMessage = document.getElementById('register-success');
+      const successText = document.getElementById('success-text');
+      const registerContainer = document.getElementById('registerContainer');
 
-        // Form inputs
-        const inputs = {
-            username: document.getElementById('username'),
-            password: document.getElementById('password'),
-            fullname: document.getElementById('fullname'),
-            email: document.getElementById('email'),
-            phone: document.getElementById('phone'),
-            dob: document.getElementById('dob'),
-            gender: document.getElementById('gender'),
-            address: document.getElementById('address')
-        };
+      // Form inputs
+      const inputs = {
+          username: document.getElementById('username'),
+          password: document.getElementById('password'),
+          fullname: document.getElementById('fullname'),
+          email: document.getElementById('email'),
+          phone: document.getElementById('phone'),
+          dob: document.getElementById('dob'),
+          gender: document.getElementById('gender'),
+          address: document.getElementById('address')
+      };
 
-        // Validation messages
-        const messages = {
-            username: document.getElementById('username-message'),
-            fullname: document.getElementById('fullname-message'),
-            email: document.getElementById('email-message'),
-            phone: document.getElementById('phone-message')
-        };
+      // Validation messages
+      const messages = {
+          username: document.getElementById('username-message'),
+          fullname: document.getElementById('fullname-message'),
+          email: document.getElementById('email-message'),
+          phone: document.getElementById('phone-message')
+      };
 
-        // Password strength elements
-        const strengthProgress = document.getElementById('strength-progress');
-        const strengthText = document.getElementById('strength-text');
+      // Password strength elements
+      const strengthProgress = document.getElementById('strength-progress');
+      const strengthText = document.getElementById('strength-text');
 
-        // Add input animation effects
-        Object.values(inputs).forEach(input => {
-            if (input) {
-                input.addEventListener('focus', () => {
-                    input.parentElement.parentElement.classList.add('focused');
-                });
-                
-                input.addEventListener('blur', () => {
-                    input.parentElement.parentElement.classList.remove('focused');
-                    if (input.value) {
-                        validateField(input);
-                    }
-                });
+      // Add input animation effects
+      Object.values(inputs).forEach(input => {
+          if (input) {
+              input.addEventListener('focus', () => {
+                  input.parentElement.parentElement.classList.add('focused');
+              });
+              
+              input.addEventListener('blur', () => {
+                  input.parentElement.parentElement.classList.remove('focused');
+                  if (input.value) {
+                      validateField(input);
+                  }
+              });
 
-                input.addEventListener('input', () => {
-                    hideMessages();
-                    if (input.id === 'password') {
-                        updatePasswordStrength(input.value);
-                    }
-                    if (input.value) {
-                        validateField(input);
-                    } else {
-                        clearValidation(input);
-                    }
-                });
-            }
-        });
+              input.addEventListener('input', () => {
+                  hideMessages();
+                  if (input.id === 'password') {
+                      updatePasswordStrength(input.value);
+                  }
+                  if (input.value) {
+                      validateField(input);
+                  } else {
+                      clearValidation(input);
+                  }
+              });
+          }
+      });
 
-        // Password strength checker
-        function updatePasswordStrength(password) {
-            if (!password) {
-                strengthProgress.className = 'strength-progress';
-                strengthText.textContent = 'Nhập mật khẩu';
-                strengthText.className = 'strength-text';
-                return;
-            }
+      // Password strength checker
+      function updatePasswordStrength(password) {
+          if (!password) {
+              strengthProgress.className = 'strength-progress';
+              strengthText.textContent = 'Nhập mật khẩu';
+              strengthText.className = 'strength-text';
+              return;
+          }
 
-            let score = 0;
-            let feedback = '';
+          let score = 0;
+          let feedback = '';
 
-            // Length check
-            if (password.length >= 8) score += 1;
-            if (password.length >= 12) score += 1;
+          // Length check
+          if (password.length >= 8) score += 1;
+          if (password.length >= 12) score += 1;
 
-            // Character variety checks
-            if (/[a-z]/.test(password)) score += 1;
-            if (/[A-Z]/.test(password)) score += 1;
-            if (/[0-9]/.test(password)) score += 1;
-            if (/[^A-Za-z0-9]/.test(password)) score += 1;
+          // Character variety checks
+          if (/[a-z]/.test(password)) score += 1;
+          if (/[A-Z]/.test(password)) score += 1;
+          if (/[0-9]/.test(password)) score += 1;
+          if (/[^A-Za-z0-9]/.test(password)) score += 1;
 
-            // Determine strength
-            if (score < 3) {
-                strengthProgress.className = 'strength-progress weak';
-                strengthText.className = 'strength-text weak';
-                feedback = 'Yếu - Cần cải thiện';
-            } else if (score < 4) {
-                strengthProgress.className = 'strength-progress fair';
-                strengthText.className = 'strength-text fair';
-                feedback = 'Trung bình - Có thể chấp nhận';
-            } else if (score < 5) {
-                strengthProgress.className = 'strength-progress good';
-                strengthText.className = 'strength-text good';
-                feedback = 'Tốt - Mật khẩu mạnh';
-            } else {
-                strengthProgress.className = 'strength-progress strong';
-                strengthText.className = 'strength-text strong';
-                feedback = 'Rất mạnh - Xuất sắc!';
-            }
+          // Determine strength
+          if (score < 3) {
+              strengthProgress.className = 'strength-progress weak';
+              strengthText.className = 'strength-text weak';
+              feedback = 'Yếu - Cần cải thiện';
+          } else if (score < 4) {
+              strengthProgress.className = 'strength-progress fair';
+              strengthText.className = 'strength-text fair';
+              feedback = 'Trung bình - Có thể chấp nhận';
+          } else if (score < 5) {
+              strengthProgress.className = 'strength-progress good';
+              strengthText.className = 'strength-text good';
+              feedback = 'Tốt - Mật khẩu mạnh';
+          } else {
+              strengthProgress.className = 'strength-progress strong';
+              strengthText.className = 'strength-text strong';
+              feedback = 'Rất mạnh - Xuất sắc!';
+          }
 
-            strengthText.textContent = feedback;
-        }
+          strengthText.textContent = feedback;
+      }
 
-        // Field validation
-        function validateField(field) {
-            const value = field.value.trim();
-            const fieldName = field.id;
-            let isValid = true;
-            let message = '';
+      // Field validation
+      function validateField(field) {
+          const value = field.value.trim();
+          const fieldName = field.id;
+          let isValid = true;
+          let message = '';
 
-            switch (fieldName) {
-                case 'username':
-                    if (value.length < 3) {
-                        isValid = false;
-                        message = 'Tên đăng nhập phải có ít nhất 3 ký tự';
-                    } else if (!/^[a-zA-Z0-9_]+$/.test(value)) {
-                        isValid = false;
-                        message = 'Chỉ được sử dụng chữ cái, số và dấu gạch dưới';
-                    } else {
-                        message = 'Tên đăng nhập hợp lệ';
-                    }
-                    break;
+          switch (fieldName) {
+              case 'username':
+                  if (value.length < 3) {
+                      isValid = false;
+                      message = 'Tên đăng nhập phải có ít nhất 3 ký tự';
+                  } else if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+                      isValid = false;
+                      message = 'Chỉ được sử dụng chữ cái, số và dấu gạch dưới';
+                  } else {
+                      message = 'Tên đăng nhập hợp lệ';
+                  }
+                  break;
 
-                case 'fullname':
-                    if (value.length < 2) {
-                        isValid = false;
-                        message = 'Họ tên phải có ít nhất 2 ký tự';
-                    } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(value)) {
-                        isValid = false;
-                        message = 'Họ tên chỉ được chứa chữ cái và khoảng trắng';
-                    } else {
-                        message = 'Họ tên hợp lệ';
-                    }
-                    break;
+              case 'fullname':
+                  if (value.length < 2) {
+                      isValid = false;
+                      message = 'Họ tên phải có ít nhất 2 ký tự';
+                  } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(value)) {
+                      isValid = false;
+                      message = 'Họ tên chỉ được chứa chữ cái và khoảng trắng';
+                  } else {
+                      message = 'Họ tên hợp lệ';
+                  }
+                  break;
 
-                case 'email':
-                    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                        isValid = false;
-                        message = 'Email không đúng định dạng';
-                    } else if (value) {
-                        message = 'Email hợp lệ';
-                    }
-                    break;
+              case 'email':
+                  if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                      isValid = false;
+                      message = 'Email không đúng định dạng';
+                  } else if (value) {
+                      message = 'Email hợp lệ';
+                  }
+                  break;
 
-                case 'phone':
-                    if (value && !/^[0-9]{10,11}$/.test(value)) {
-                        isValid = false;
-                        message = 'Số điện thoại phải có 10-11 chữ số';
-                    } else if (value) {
-                        message = 'Số điện thoại hợp lệ';
-                    }
-                    break;
-            }
+              case 'phone':
+                  if (value && !/^[0-9]{10,11}$/.test(value)) {
+                      isValid = false;
+                      message = 'Số điện thoại phải có 10-11 chữ số';
+                  } else if (value) {
+                      message = 'Số điện thoại hợp lệ';
+                  }
+                  break;
+          }
 
-            // Update field appearance and message
-            if (messages[fieldName]) {
-                if (isValid) {
-                    field.classList.remove('invalid');
-                    field.classList.add('valid');
-                    messages[fieldName].textContent = message;
-                    messages[fieldName].className = 'validation-message success';
-                } else {
-                    field.classList.remove('valid');
-                    field.classList.add('invalid');
-                    messages[fieldName].textContent = message;
-                    messages[fieldName].className = 'validation-message error';
-                }
-            }
+          // Update field appearance and message
+          if (messages[fieldName]) {
+              if (isValid) {
+                  field.classList.remove('invalid');
+                  field.classList.add('valid');
+                  messages[fieldName].textContent = message;
+                  messages[fieldName].className = 'validation-message success';
+              } else {
+                  field.classList.remove('valid');
+                  field.classList.add('invalid');
+                  messages[fieldName].textContent = message;
+                  messages[fieldName].className = 'validation-message error';
+              }
+          }
 
-            return isValid;
-        }
+          return isValid;
+      }
 
-        // Clear validation
-        function clearValidation(field) {
-            field.classList.remove('valid', 'invalid');
-            const fieldName = field.id;
-            if (messages[fieldName]) {
-                messages[fieldName].textContent = '';
-                messages[fieldName].className = 'validation-message';
-            }
-        }
+      // Clear validation
+      function clearValidation(field) {
+          field.classList.remove('valid', 'invalid');
+          const fieldName = field.id;
+          if (messages[fieldName]) {
+              messages[fieldName].textContent = '';
+              messages[fieldName].className = 'validation-message';
+          }
+      }
 
-        // Show error message
-        function showError(message) {
-            errorText.textContent = message;
-            errorMessage.style.display = 'block';
-            successMessage.style.display = 'none';
-            setTimeout(() => {
-                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 100);
-        }
+      // Show error message
+      function showError(message) {
+          errorText.textContent = message;
+          errorMessage.style.display = 'block';
+          successMessage.style.display = 'none';
+          setTimeout(() => {
+              errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 100);
+      }
 
-        // Show success message
-        function showSuccess(message) {
-            successText.textContent = message;
-            successMessage.style.display = 'block';
-            errorMessage.style.display = 'none';
-        }
+      // Show success message
+      function showSuccess(message) {
+          successText.textContent = message;
+          successMessage.style.display = 'block';
+          errorMessage.style.display = 'none';
+      }
 
-        // Hide messages
-        function hideMessages() {
-            errorMessage.style.display = 'none';
-            successMessage.style.display = 'none';
-        }
+      // Hide messages
+      function hideMessages() {
+          errorMessage.style.display = 'none';
+          successMessage.style.display = 'none';
+      }
 
-        // Set loading state
-        function setLoading(loading) {
-            if (loading) {
-                registerContainer.classList.add('loading');
-                registerButton.disabled = true;
-                buttonSpinner.style.display = 'inline-block';
-                buttonText.textContent = 'Đang đăng ký...';
-            } else {
-                registerContainer.classList.remove('loading');
-                registerButton.disabled = false;
-                buttonSpinner.style.display = 'none';
-                buttonText.textContent = 'Đăng ký tài khoản';
-            }
-        }
+      // Set loading state
+      function setLoading(loading) {
+          if (loading) {
+              registerContainer.classList.add('loading');
+              registerButton.disabled = true;
+              buttonSpinner.style.display = 'inline-block';
+              buttonText.textContent = 'Đang đăng ký...';
+          } else {
+              registerContainer.classList.remove('loading');
+              registerButton.disabled = false;
+              buttonSpinner.style.display = 'none';
+              buttonText.textContent = 'Đăng ký tài khoản';
+          }
+      }
 
-        // Form validation
-        function validateForm() {
-            let isValid = true;
-            const requiredFields = ['username', 'password', 'fullname'];
+      // Form validation
+      function validateForm() {
+          let isValid = true;
+          const requiredFields = ['username', 'password', 'fullname'];
 
-            // Check required fields
-            requiredFields.forEach(fieldName => {
-                const field = inputs[fieldName];
-                if (!field.value.trim()) {
-                    showError(`Vui lòng nhập ${field.previousElementSibling.textContent.replace(' *', '')}`);
-                    field.focus();
-                    isValid = false;
-                    return false;
-                }
-                if (!validateField(field)) {
-                    isValid = false;
-                    return false;
-                }
-            });
+          // Check required fields
+          requiredFields.forEach(fieldName => {
+              const field = inputs[fieldName];
+              if (!field.value.trim()) {
+                  showError(`Vui lòng nhập ${field.previousElementSibling.textContent.replace(' *', '')}`);
+                  field.focus();
+                  isValid = false;
+                  return false;
+              }
+              if (!validateField(field)) {
+                  isValid = false;
+                  return false;
+              }
+          });
 
-            // Check optional fields if they have values
-            ['email', 'phone'].forEach(fieldName => {
-                const field = inputs[fieldName];
-                if (field.value.trim() && !validateField(field)) {
-                    isValid = false;
-                    return false;
-                }
-            });
+          // Check optional fields if they have values
+          ['email', 'phone'].forEach(fieldName => {
+              const field = inputs[fieldName];
+              if (field.value.trim() && !validateField(field)) {
+                  isValid = false;
+                  return false;
+              }
+          });
 
-            return isValid;
-        }
+          return isValid;
+      }
 
-        // Handle form submission
-        registerForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            hideMessages();
+      // Handle form submission
+      registerForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          hideMessages();
 
-            if (!validateForm()) {
-                return;
-            }
+          if (!validateForm()) {
+              return;
+          }
 
-            const formData = {
-                Username: inputs.username.value.trim(),
-                password: inputs.password.value,
-                FullName: inputs.fullname.value.trim(),
-                Email: inputs.email.value.trim() || null,
-                Phone: inputs.phone.value.trim() || null,
-                DateOfBirth: inputs.dob.value ? new Date(inputs.dob.value).toISOString() : null,
-                Gender: inputs.gender.value || null,
-                Address: inputs.address.value.trim() || null,
-                Role: 'patient'
-            };
+          const formData = {
+              Username: inputs.username.value.trim(),
+              password: inputs.password.value,
+              FullName: inputs.fullname.value.trim(),
+              Email: inputs.email.value.trim() || null,
+              Phone: inputs.phone.value.trim() || null,
+              DateOfBirth: inputs.dob.value ? new Date(inputs.dob.value).toISOString() : null,
+              Gender: inputs.gender.value || null,
+              Address: inputs.address.value.trim() || null,
+              Role: 'patient'
+          };
 
-            try {
-                setLoading(true);
+          try {
+              setLoading(true);
 
-                // Simulate network delay for better UX
-                await new Promise(resolve => setTimeout(resolve, 1000));
+              // Simulate network delay for better UX
+              await new Promise(resolve => setTimeout(resolve, 1000));
 
-                const response = await fetch('http://localhost:8000/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
+              const response = await fetch('http://localhost:8000/register', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(formData)
+              });
 
-                if (response.ok) {
-                    showSuccess('Đăng ký thành công! Chuyển hướng đến trang đăng nhập...');
-                    
-                    // Success animation
-                    registerContainer.style.animation = 'successPulse 0.6s ease';
-                    buttonText.textContent = 'Đăng ký thành công!';
-                    registerButton.style.background = 'linear-gradient(135deg, var(--success), #059669)';
-                    
-                    // Redirect after animation
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 2000);
-                    
-                } else {
-                    const errorData = await response.json().catch(() => ({}));
-                    showError(errorData.detail || 'Đăng ký thất bại. Vui lòng thử lại!');
-                }
-            } catch (error) {
-                console.error('Register error:', error);
-                showError('Không thể kết nối đến server. Vui lòng thử lại sau.');
-            } finally {
-                if (!successMessage.style.display || successMessage.style.display === 'none') {
-                    setLoading(false);
-                }
-            }
-        });
+              if (response.ok) {
+                  showSuccess('Đăng ký thành công! Chuyển hướng đến trang đăng nhập...');
+                  
+                  // Success animation
+                  registerContainer.style.animation = 'successPulse 0.6s ease';
+                  buttonText.textContent = 'Đăng ký thành công!';
+                  registerButton.style.background = 'linear-gradient(135deg, var(--success), #059669)';
+                  
+                  // Redirect after animation
+                  setTimeout(() => {
+                      window.location.href = 'login.html';
+                  }, 2000);
+                  
+              } else {
+                  const errorData = await response.json().catch(() => ({}));
+                  showError(errorData.detail || 'Đăng ký thất bại. Vui lòng thử lại!');
+              }
+          } catch (error) {
+              console.error('Register error:', error);
+              showError('Không thể kết nối đến server. Vui lòng thử lại sau.');
+          } finally {
+              if (!successMessage.style.display || successMessage.style.display === 'none') {
+                  setLoading(false);
+              }
+          }
+      });
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !registerButton.disabled) {
-                registerForm.requestSubmit();
-            }
-            if (e.key === 'Escape') {
-                hideMessages();
-            }
-        });
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !registerButton.disabled) {
+              registerForm.requestSubmit();
+          }
+          if (e.key === 'Escape') {
+              hideMessages();
+          }
+      });
 
-        // Prevent double submission
-        registerForm.addEventListener('submit', (e) => {
-            if (registerButton.disabled) {
-                e.preventDefault();
-            }
-        });
+      // Prevent double submission
+      registerForm.addEventListener('submit', (e) => {
+          if (registerButton.disabled) {
+              e.preventDefault();
+          }
+      });
 
-        // Success animation keyframes
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes successPulse {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(1.02); }
-            }
-            
-            @keyframes ripple {
-                to {
-                    transform: scale(2);
-                    opacity: 0;
-                }
-            }
-        `;
-        document.head.appendChild(style);
+      // Success animation keyframes
+      const style = document.createElement('style');
+      style.textContent = `
+          @keyframes successPulse {
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.02); }
+          }
+          
+          @keyframes ripple {
+              to {
+                  transform: scale(2);
+                  opacity: 0;
+              }
+          }
+      `;
+      document.head.appendChild(style);
 
-        // Add ripple effect to button
-        registerButton.addEventListener('click', function(e) {
-            const ripple = document.createElement('span');
-            const rect = this.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            const x = e.clientX - rect.left - size / 2;
-            const y = e.clientY - rect.top - size / 2;
-            
-            ripple.style.cssText = `
-                position: absolute;
-                width: ${size}px;
-                height: ${size}px;
-                left: ${x}px;
-                top: ${y}px;
-                background: rgba(255, 255, 255, 0.3);
-                border-radius: 50%;
-                transform: scale(0);
-                animation: ripple 0.6s linear;
-                pointer-events: none;
-            `;
-            
-            this.appendChild(ripple);
-            
-            setTimeout(() => {
-                ripple.remove();
-            }, 600);
-        });
+      // Add ripple effect to button
+      registerButton.addEventListener('click', function(e) {
+          const ripple = document.createElement('span');
+          const rect = this.getBoundingClientRect();
+          const size = Math.max(rect.width, rect.height);
+          const x = e.clientX - rect.left - size / 2;
+          const y = e.clientY - rect.top - size / 2;
+          
+          ripple.style.cssText = `
+              position: absolute;
+              width: ${size}px;
+              height: ${size}px;
+              left: ${x}px;
+              top: ${y}px;
+              background: rgba(255, 255, 255, 0.3);
+              border-radius: 50%;
+              transform: scale(0);
+              animation: ripple 0.6s linear;
+              pointer-events: none;
+          `;
+          
+          this.appendChild(ripple);
+          
+          setTimeout(() => {
+              ripple.remove();
+          }, 600);
+      });
+
+      // Hiển thị footer khi đã đăng nhập
+      if (localStorage.getItem('token')) {
+          document.getElementById('main-footer').style.display = 'block';
+      }
     </script>
 </body>
 </html>

@@ -28,7 +28,7 @@ class Department(Base):
     __tablename__ = "Departments"
     DepartmentId = Column(Integer, primary_key=True, index=True)
     Name = Column(Unicode(100), nullable=False)
-    Type = Column(Unicode(50), nullable=False)  # Tăng lên 50 ký tự
+    Type = Column(Unicode(50), default="General")  # Thêm lại trường Type với default value
     Description = Column(UnicodeText)
     Location = Column(Unicode(100))
     Floor = Column(Unicode(10))

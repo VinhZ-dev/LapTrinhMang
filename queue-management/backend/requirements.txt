@@ -3,7 +3,8 @@ uvicorn
 sqlalchemy
 pydantic
 passlib[bcrypt]
-python-jose
+python-jose[cryptography]
 websockets
+python-multipart
 pyodbc
 

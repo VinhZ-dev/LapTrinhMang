@@ -489,3 +489,35 @@ body {
         grid-template-columns: 1fr;
     }
 } 
+
+/* === Chatbot Gemini === */
+#hospital-chatbot-btn {
+  box-shadow: 0 4px 24px rgba(37,99,235,0.18);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+#hospital-chatbot-btn:hover {
+  box-shadow: 0 8px 32px rgba(37,99,235,0.28);
+  transform: scale(1.07);
+}
+#hospital-chatbot-box {
+  animation: chatbotFadeIn 0.25s;
+}
+@keyframes chatbotFadeIn {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (max-width: 500px) {
+  #hospital-chatbot-box {
+    width: 98vw !important;
+    right: 1vw !important;
+    bottom: 80px !important;
+    height: 60vh !important;
+    min-width: 0 !important;
+  }
+  #hospital-chatbot-btn {
+    right: 1vw !important;
+    bottom: 16px !important;
+    width: 48px !important;
+    height: 48px !important;
+  }
+} 

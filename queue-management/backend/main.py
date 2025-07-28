@@ -30,7 +30,12 @@ app.add_middleware(
 )
 
 # --- Database ---
-models.Base.metadata.create_all(bind=database.engine)
+try:
+    models.Base.metadata.create_all(bind=database.engine)
+    print("Database tables created successfully!")
+except Exception as e:
+    print(f"Warning: Could not create database tables: {e}")
+    print("Application will continue but database operations may fail.")
 
 def get_db():
     db = database.SessionLocal()
@@ -108,22 +113,28 @@ def get_queue_entries(db: Session = Depends(get_db)):
 @app.post("/queue_entries", response_model=schemas.QueueEntryOut)
 def add_queue_entry(entry: schemas.QueueEntryCreate, db: Session = Depends(get_db)):
     try:
-        # Tính position cho entry mới
-        last_position = db.query(models.QueueEntry).filter(
-            models.QueueEntry.QueueId == entry.QueueId
-        ).order_by(models.QueueEntry.Position.desc()).first()
-        
-        new_position = 1 if not last_position else last_position.Position + 1
-        
+        # Thêm bệnh nhân vào vị trí đầu tiên
         db_entry = models.QueueEntry(
             QueueId=entry.QueueId, 
             UserId=entry.UserId,
-            Position=new_position,
+            Position=1,
             Status="waiting"
         )
         db.add(db_entry)
         db.commit()
         db.refresh(db_entry)
+        
+        # Đẩy tất cả bệnh nhân khác xuống 1 vị trí
+        waiting_entries = db.query(models.QueueEntry).filter(
+            models.QueueEntry.QueueId == entry.QueueId,
+            models.QueueEntry.Status == "waiting",
+            models.QueueEntry.EntryId != db_entry.EntryId  # Không bao gồm entry vừa thêm
+        ).order_by(models.QueueEntry.Position).all()
+        
+        for idx, e in enumerate(waiting_entries, start=2):  # Bắt đầu từ vị trí 2
+            e.Position = idx
+        db.commit()
+        
         # Broadcast cập nhật realtime
         send_queue_update(db)
         return db_entry
@@ -136,6 +147,8 @@ def update_entry_status(entry_id: int, status: str, db: Session = Depends(get_db
     entry = db.query(models.QueueEntry).filter(models.QueueEntry.EntryId == entry_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
+    
+    old_status = entry.Status
     entry.Status = status
     
     # Nếu status là "done", tạo record trong ServeHistory
@@ -144,6 +157,17 @@ def update_entry_status(entry_id: int, status: str, db: Session = Depends(get_db
         db.add(history)
     
     db.commit()
+    
+    # Nếu chuyển từ "waiting" sang "serving" hoặc "done", cập nhật lại Position cho các entry còn lại
+    if old_status == "waiting" and status in ["serving", "done"]:
+        waiting_entries = db.query(models.QueueEntry).filter(
+            models.QueueEntry.QueueId == entry.QueueId,
+            models.QueueEntry.Status == "waiting"
+        ).order_by(models.QueueEntry.Position).all()
+        for idx, e in enumerate(waiting_entries, start=1):
+            e.Position = idx
+        db.commit()
+    
     send_queue_update(db)
     return {"ok": True}
 

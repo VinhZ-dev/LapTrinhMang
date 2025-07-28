@@ -19,6 +19,7 @@ import hospital_schemas as schemas
 
 class RoleUpdate(BaseModel):
     role: str
+    admin_password: str
 
 # Configuration
 SECRET_KEY = "hospital-secret-key-2024"
@@ -44,7 +45,37 @@ app.add_middleware(
 )
 
 # Database
-models.Base.metadata.create_all(bind=database.engine)
+try:
+    # Kiểm tra kết nối database
+    from database import test_connection
+    if test_connection():
+        print("✅ Connected to SQL Server database")
+    else:
+        print("❌ Failed to connect to database")
+    
+    # Không tạo bảng mới vì đã có trong SQL Server
+    # models.Base.metadata.create_all(bind=database.engine)
+    
+    # Kiểm tra dữ liệu hiện có
+    from database import SessionLocal
+    db = SessionLocal()
+    try:
+        user_count = db.query(models.User).count()
+        print(f"📊 Database has {user_count} users")
+        
+        # Hiển thị danh sách users hiện có
+        users = db.query(models.User).all()
+        print("👥 Available users:")
+        for user in users:
+            print(f"  - {user.Username} ({user.Role})")
+            
+    except Exception as e:
+        print(f"⚠️ Could not read users: {e}")
+    finally:
+        db.close()
+        
+except Exception as e:
+    print(f"❌ Database error: {e}")
 
 def get_db():
     db = database.SessionLocal()
@@ -237,6 +268,10 @@ def update_current_user(
 def update_user_role(user_id: int, data: RoleUpdate, db: Session = Depends(get_db), token: dict = Depends(verify_token)):
     if token["role"] != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
+    # Xác thực mật khẩu admin
+    admin = db.query(models.User).filter(models.User.Username == token["username"]).first()
+    if not admin or not verify_password(data.admin_password, admin.PasswordHash):
+        raise HTTPException(status_code=401, detail="Mật khẩu admin không đúng")
     user = db.query(models.User).filter(models.User.UserId == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -370,19 +405,31 @@ def confirm_appointment(appointment_id: int, db: Session = Depends(get_db), toke
         db.add(queue)
         db.commit()
         db.refresh(queue)
-    last_entry = db.query(models.QueueEntry).filter(models.QueueEntry.QueueId == queue.QueueId).order_by(models.QueueEntry.Position.desc()).first()
-    new_position = 1 if not last_entry else last_entry.Position + 1
+    # Thêm bệnh nhân vào vị trí đầu tiên của hàng đợi
     entry = models.QueueEntry(
         QueueId=queue.QueueId,
         UserId=appt.PatientId,
-        Position=new_position,
+        Position=1,
         Status="waiting"
     )
     db.add(entry)
+    
     # Cập nhật trạng thái lịch hẹn
     appt.Status = "confirmed"
     db.commit()
     db.refresh(entry)
+
+    # Sau khi thêm vào hàng đợi, cập nhật lại Position cho các QueueEntry còn lại (Status='waiting')
+    # Đẩy tất cả bệnh nhân khác xuống 1 vị trí
+    waiting_entries = db.query(models.QueueEntry).filter(
+        models.QueueEntry.QueueId == queue.QueueId,
+        models.QueueEntry.Status == "waiting",
+        models.QueueEntry.EntryId != entry.EntryId  # Không bao gồm entry vừa thêm
+    ).order_by(models.QueueEntry.Position).all()
+    
+    for idx, e in enumerate(waiting_entries, start=2):  # Bắt đầu từ vị trí 2
+        e.Position = idx
+    db.commit()
     return {"message": "Appointment confirmed and added to queue", "queue_entry_id": entry.EntryId}
 
 @app.get("/appointments/{appointment_id}", response_model=schemas.AppointmentOut)
@@ -433,6 +480,21 @@ def send_queue_update(db: Session):
             asyncio.create_task(manager.broadcast({"type": "queue_update"}))
         except:
             pass
+
+# Thêm hàm gửi notification (đặt ở đầu file, sau import)
+def send_notification(db, user_id, title, message, type_="info"):
+    from hospital_models import Notification
+    notification = Notification(
+        UserId=user_id,
+        Title=title,
+        Message=message,
+        Type=type_,
+        IsRead=False
+    )
+    db.add(notification)
+    db.commit()
+    db.refresh(notification)
+    return notification
 
 @app.get("/dashboard/stats")
 def dashboard_stats(db: Session = Depends(get_db), token: dict = Depends(verify_token)):
@@ -512,7 +574,7 @@ def queue_status(db: Session = Depends(get_db), token: dict = Depends(verify_tok
 def start_queue(queue_id: int = Path(...), db: Session = Depends(get_db), token: dict = Depends(verify_token)):
     if token["role"] not in ["admin", "receptionist", "doctor", "nurse"]:
         raise HTTPException(status_code=403, detail="Not authorized")
-    # Lấy entry đầu tiên đang chờ
+    # Lấy entry đầu tiên đang chờ (Position = 1)
     entry = db.query(models.QueueEntry).filter(
         models.QueueEntry.QueueId == queue_id,
         models.QueueEntry.Status == "waiting"
@@ -521,6 +583,17 @@ def start_queue(queue_id: int = Path(...), db: Session = Depends(get_db), token:
         raise HTTPException(status_code=404, detail="No waiting entry")
     entry.Status = "serving"
     db.commit()
+    # Gửi thông báo cho bệnh nhân này: "Bắt đầu vào khám"
+    if entry.UserId:
+        send_notification(db, entry.UserId, "Bắt đầu khám", "Bạn đã được gọi vào khám. Vui lòng di chuyển vào phòng khám.", "info")
+    # Gửi thông báo cho người tiếp theo (nếu có): "Sắp tới lượt khám"
+    next_entry = db.query(models.QueueEntry).filter(
+        models.QueueEntry.QueueId == queue_id,
+        models.QueueEntry.Status == "waiting",
+        models.QueueEntry.Position == 2
+    ).first()
+    if next_entry and next_entry.UserId:
+        send_notification(db, next_entry.UserId, "Sắp tới lượt khám", "Bạn là người tiếp theo, hãy chuẩn bị vào khám.", "info")
     send_queue_update(db)
     return {"message": "Started serving"}
 
@@ -543,7 +616,11 @@ def complete_queue(queue_id: int = Path(...), db: Session = Depends(get_db), tok
         history = models.ServeHistory(EntryId=entry.EntryId, ServedAt=datetime.utcnow())
         db.add(history)
     db.commit()
+    # Gửi thông báo cho bệnh nhân này: "Hoàn thành khám"
+    if entry.UserId:
+        send_notification(db, entry.UserId, "Hoàn thành khám", "Bạn đã hoàn thành lượt khám. Cảm ơn bạn!", "success")
     # Sau khi hoàn thành, cập nhật lại Position cho các QueueEntry còn lại (Status='waiting')
+    # Đánh lại số thứ tự từ 1 cho các bệnh nhân còn chờ
     waiting_entries = db.query(models.QueueEntry).filter(
         models.QueueEntry.QueueId == queue_id,
         models.QueueEntry.Status == "waiting"
@@ -551,6 +628,11 @@ def complete_queue(queue_id: int = Path(...), db: Session = Depends(get_db), tok
     for idx, e in enumerate(waiting_entries, start=1):
         e.Position = idx
     db.commit()
+    # Gửi thông báo cho người tiếp theo (nếu có): "Sắp tới lượt khám"
+    if waiting_entries:
+        first_waiting = waiting_entries[0]
+        if first_waiting.UserId:
+            send_notification(db, first_waiting.UserId, "Sắp tới lượt khám", "Bạn là người tiếp theo, hãy chuẩn bị vào khám.", "info")
     send_queue_update(db)
     return {"message": "Completed entry"}
 
@@ -621,6 +703,15 @@ def get_doctor_departments(doctor_id: Optional[int] = Query(None), db: Session =
         print(f"Error in /doctor_departments: {e}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/notifications", response_model=List[schemas.NotificationOut])
+def get_notifications(db: Session = Depends(get_db), token: dict = Depends(verify_token)):
+    # Chỉ cho phép bệnh nhân lấy thông báo của mình
+    user = db.query(models.User).filter(models.User.Username == token["username"]).first()
+    if not user or user.Role != "patient":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    notifications = db.query(models.Notification).filter(models.Notification.UserId == user.UserId).order_by(models.Notification.CreatedAt.desc()).all()
+    return notifications
 
 @app.get("/")
 def read_root():
